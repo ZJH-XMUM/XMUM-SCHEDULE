@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>XMUM Schedule Hub | 厦大马校课表与校历通</title>
+  <meta name="description" content="厦门大学马来西亚分校专用的智能课表与2026/2027完整校历助手，支持一键导出与AC教务系统同步。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="XMUM课表">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#0f172a" id="metaThemeColor">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="shortcut icon" href="favicon.ico">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="theme-dark">
+  <div class="app-container" id="app">
+    <!-- Top Navigation / Header -->
+    <header class="app-header">
+      <div class="header-main">
+        <div class="brand">
+          <div class="brand-crest">
+            <span class="crest-icon">🏛️</span>
+          </div>
+          <div class="brand-text">
+            <div class="university-title">XMUM Online</div>
+            <h1 class="app-title">Schedule Hub</h1>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-icon" id="recycleBinBtn" title="课程回收站 / 恢复" aria-label="课程回收站">
+            <span class="trash-icon">🗑️</span>
+            <span class="badge-count hidden" id="recycleCountBadge">0</span>
+          </button>
+          <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            <span class="btn-badge-dot"></span>
+          </button>
+          <button class="btn-icon" id="exportIcsBtn" title="导出日历 (.ics)" aria-label="导出日历">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+          <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Semester & User Status Strip -->
+      <div class="semester-strip">
+        <div class="semester-picker-wrapper">
+          <span class="picker-icon">🎓</span>
+          <select id="semesterSelect" class="semester-select">
+            <option value="2026/09" selected>2026/09 (Sep Semester)</option>
+            <option value="2026/04">2026/04 (Apr Semester)</option>
+            <option value="2026/02">2026/02 (Feb Semester)</option>
+            <option value="2027/09">2027/09 (Sep Semester)</option>
+            <option value="2027/04">2027/04 (Apr Semester)</option>
+            <option value="2027/02">2027/02 (Feb Semester)</option>
+          </select>
+        </div>
+        <div class="user-greeting" id="userGreeting">
+          <span class="online-indicator"></span>
+          <span id="studentNameDisplay">Hi, 同学</span>
+        </div>
+      </div>
+
+      <!-- Week Selector Slider -->
+      <div class="week-selector-container">
+        <button class="week-nav-btn prev" id="prevWeekBtn" aria-label="上一周">‹</button>
+        <div class="week-chips-scroll" id="weekChipsContainer">
+          <!-- Week chips dynamically injected -->
+        </div>
+        <button class="week-nav-btn next" id="nextWeekBtn" aria-label="下一周">›</button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Live Today Summary Banner -->
+      <section class="today-banner" id="todayBanner">
+        <div class="banner-top">
+          <div class="date-tag" id="currentDateDisplay">Tuesday, 6 Oct 2026</div>
+          <div class="status-pill active" id="termStatusBadge">第 2 周 • 教学周 (Teaching)</div>
+        </div>
+        <div class="banner-next-class" id="nextClassContainer">
+          <div class="next-class-label" id="nextClassLabel">⏰ 下一节课</div>
+          <div class="next-class-content" id="nextClassContent">
+            <div class="next-class-name">✨ 欢迎使用 XMUM 课表与校历通！</div>
+            <div class="next-class-meta">
+              <span class="meta-tag venue">📍 点击右上角【同步 AC 课表】</span>
+              <span class="meta-tag time">🚀 快速导入你的个人课表</span>
+            </div>
+          </div>
+        </div>
+        <div class="holiday-alert-card hidden" id="holidayAlertCard">
+          <span class="holiday-icon">🎉</span>
+          <div class="holiday-details">
+            <div class="holiday-title" id="holidayTitle">公共假期</div>
+            <div class="holiday-sub">今日无教学安排，享受你的假期！</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Weekly Timetable Grid -->
+      <section class="view-panel active" id="weeklyGridView">
+        <div class="grid-controls">
+          <div class="grid-title-info">
+            <h2 class="view-title" id="gridWeekTitle">第 2 周 课表</h2>
+            <span class="date-range-sub" id="gridDateRange">10月4日 - 10月10日</span>
+          </div>
+          <div class="grid-actions">
+            <button class="btn-pill" id="todayJumpBtn">回到今天</button>
+            <button class="btn-pill secondary" id="recycleBinPillBtn">🗑️ 回收站</button>
+            <button class="btn-pill secondary" id="addCustomCourseBtn">+ 记事</button>
+          </div>
+        </div>
+
+        <!-- Timetable Grid Matrix -->
+        <div class="timetable-scroll-wrapper">
+          <div class="timetable-table" id="timetableGrid">
+            <!-- Dynamically generated timetable matrix -->
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Daily Agenda Feed -->
+      <section class="view-panel" id="dailyAgendaView">
+        <div class="agenda-controls">
+          <div class="day-tabs" id="dayTabsContainer">
+            <!-- Dynamically populated by renderDayTabs() -->
+          </div>
+        </div>
+        <div class="daily-timeline-list" id="dailyAgendaList">
+          <!-- Daily items dynamically populated -->
+        </div>
+      </section>
+
+      <!-- View: Academic Calendar Full Overview -->
+      <section class="view-panel" id="calendarOverviewView">
+        <div class="calendar-hero-card">
+          <div class="hero-header">
+            <div>
+              <span class="sub-badge">厦大马校官方</span>
+              <h2 class="hero-title">2026 - 2027 官方校历</h2>
+            </div>
+            <div class="year-tabs" id="calendarYearTabs">
+              <button class="year-tab active" data-year="2026">2026</button>
+              <button class="year-tab" data-year="2027">2027</button>
+            </div>
+          </div>
+          <p class="hero-desc">包含教学周、复习周 (Revision Week)、期末考试周 (Exam Week) 及全部马来西亚法定节假日。</p>
+        </div>
+
+        <!-- Milestone Countdown Cards -->
+        <div class="milestones-row" id="milestonesRow">
+          <!-- Countdown cards rendered here -->
+        </div>
+
+        <!-- Semester Breakdown Accordion / Cards -->
+        <div class="semesters-list" id="semestersCalendarList">
+          <!-- Populated from ACADEMIC_CALENDAR -->
+        </div>
+
+        <!-- Public Holidays List -->
+        <div class="holidays-section">
+          <h3 class="section-title">🇲🇾 马来西亚法定公共节假日</h3>
+          <div class="holidays-grid" id="holidaysListGrid">
+            <!-- Holidays rendered here -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile Thumb Zone) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="weeklyGridView" id="navWeekGrid">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">周课表</span>
+      </button>
+      <button class="nav-item" data-view="dailyAgendaView" id="navDailyAgenda">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">今日看板</span>
+      </button>
+      <button class="nav-item" data-view="calendarOverviewView" id="navCalendar">
+        <span class="nav-icon">🗓️</span>
+        <span class="nav-label">全景校历</span>
+      </button>
+      <button class="nav-item" id="navSyncModal">
+        <span class="nav-icon">🔄</span>
+        <span class="nav-label">AC同步</span>
+      </button>
+    </nav>
+
+    <!-- Modal: AC Sync & Import -->
+    <div class="modal-backdrop" id="syncModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge">AC Connection</span>
+            <h3 class="modal-title">导入与同步 AC 课表</h3>
+          </div>
+          <button class="btn-close" id="closeSyncModalBtn">×</button>
+        </div>
+
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-target="tabAutoLogin">一键账号同步 (推荐)</button>
+          <button class="modal-tab" data-target="tabHtmlImport">HTML 源码导入</button>
+          <button class="modal-tab" data-target="tabSampleDemo">演示数据</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Tab 1: Auto Login -->
+          <div class="modal-tab-pane active" id="tabAutoLogin">
+            <p class="modal-tip">直接连接学校教务系统 <code>https://ac.xmu.edu.my/</code>，输入学号密码，自动秒级解析排课：</p>
+            <form id="acLoginForm" class="ac-form">
+              <div class="form-group">
+                <label for="acUsername">Student ID / 学号</label>
+                <input type="text" id="acUsername" placeholder="如 SWE2109xxx" autocomplete="username" required>
+              </div>
+              <div class="form-group">
+                <label for="acPassword">Password / 密码</label>
+                <input type="password" id="acPassword" placeholder="AC 系统登录密码" autocomplete="current-password" required>
+              </div>
+              <div class="form-group">
+                <label for="acSemester">目标学期</label>
+                <select id="acSemester" class="form-select">
+                  <option value="2026/09" selected>2026/09 (当前学期)</option>
+                  <option value="2026/04">2026/04</option>
+                  <option value="2026/02">2026/02</option>
+                  <option value="2027/02">2027/02</option>
+                  <option value="2027/04">2027/04</option>
+                  <option value="2027/09">2027/09</option>
+                </select>
+              </div>
+              <div class="form-status" id="loginStatusMsg"></div>
+              <button type="submit" class="btn-primary full-width" id="startLoginSyncBtn">
+                <span class="btn-text">立即连接并同步课表</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Tab 2: HTML Paste Import -->
+          <div class="modal-tab-pane" id="tabHtmlImport">
+            <p class="modal-tip">不想输入密码？在电脑浏览器打开 <code>https://ac.xmu.edu.my/student/index.php?c=Default&a=Kb</code>，右键查看源码全选复制粘贴到下方即可：</p>
+            <div class="form-group">
+              <textarea id="htmlInputArea" rows="6" class="form-textarea" placeholder="在此粘贴 AC 课表页面的 HTML 源代码..."></textarea>
+            </div>
+            <button class="btn-primary full-width" id="parseHtmlBtn">
+              解析并导入课表
+            </button>
+          </div>
+
+          <!-- Tab 3: Demo Data -->
+          <div class="modal-tab-pane" id="tabSampleDemo">
+            <p class="modal-tip">体验课表功能与双周/校历联动效果：</p>
+            <div class="demo-card-preview">
+              <div class="preview-title">通用示例 • 2026/09 学期课表</div>
+              <div class="preview-courses">SWE101 (Computing) | MAT101 (Calculus)</div>
+            </div>
+            <button class="btn-secondary full-width" id="loadDemoBtn">
+              载入通用演示课表
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Course Details Card -->
+    <div class="modal-backdrop" id="courseDetailModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge" id="modalCourseCode">COURSE</span>
+            <h3 class="modal-title" id="modalCourseName">课程详情</h3>
+          </div>
+          <button class="btn-close" id="closeDetailModalBtn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="course-detail-list">
+            <div class="detail-row">
+              <div class="detail-label">📍 上课教室 / 教学楼</div>
+              <div class="detail-val highlight" id="modalLocation">-</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">👤 授课讲师</div>
+              <div class="detail-val" id="modalInstructor">-</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">🕒 时间安排</div>
+              <div class="detail-val" id="modalTime">-</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">📅 适用周次</div>
+              <div class="detail-val" id="modalWeeks">-</div>
+            </div>
+          </div>
+
+          <!-- Rescheduled Alert Banner (if rescheduled) -->
+          <div class="reschedule-info-banner hidden" id="rescheduleInfoBanner">
+            <div class="banner-badge">🔄 课程已调整</div>
+            <div class="banner-text" id="rescheduleBannerText">原时间: -</div>
+            <div class="banner-reason" id="rescheduleBannerReason">备注: 调课补课</div>
+            <button class="btn-restore-link" id="restoreOriginalCourseBtn">恢复初始时间地点</button>
+          </div>
+
+          <!-- Course Notes Section -->
+          <div class="modal-section-box">
+            <div class="section-box-header">
+              <span class="box-title">📝 课程专属备注</span>
+              <span class="box-sub-tip">可记录调课通知、随堂Quiz或作业要求</span>
+            </div>
+            <div class="notes-input-wrapper">
+              <textarea id="courseNotesInput" class="notes-textarea" rows="2" placeholder="在此输入备注，例如：老师说本周五补课、下周有期中测验..."></textarea>
+              <div class="notes-actions">
+                <button class="btn-pill-small" id="saveNotesBtn">保存备注</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reschedule / Makeup Class Section -->
+          <div class="modal-section-box">
+            <div class="section-box-header toggle-header" id="toggleRescheduleHeader">
+              <span class="box-title">🔄 调课 / 调整时间与地点</span>
+              <button class="btn-toggle-sub" id="toggleRescheduleBtn">展开调课设置 ▾</button>
+            </div>
+            <div class="reschedule-form-body hidden" id="rescheduleFormBody">
+              <div class="form-row-2">
+                <div class="form-group-sub">
+                  <label for="rescheduleDay">调课至星期</label>
+                  <select id="rescheduleDay" class="form-select-sm">
+                    <option value="1">周一 (Monday)</option>
+                    <option value="2">周二 (Tuesday)</option>
+                    <option value="3">周三 (Wednesday)</option>
+                    <option value="4">周四 (Thursday)</option>
+                    <option value="5">周五 (Friday)</option>
+                    <option value="6">周六 (Saturday)</option>
+                    <option value="7">周日 (Sunday)</option>
+                  </select>
+                </div>
+                <div class="form-group-sub">
+                  <label for="rescheduleSlot">起始时间</label>
+                  <select id="rescheduleSlot" class="form-select-sm">
+                    <option value="1">08:00 开始</option>
+                    <option value="2">09:00 开始</option>
+                    <option value="3">10:00 开始</option>
+                    <option value="4">11:00 开始</option>
+                    <option value="5">12:00 开始</option>
+                    <option value="6">13:00 开始</option>
+                    <option value="7">14:00 开始</option>
+                    <option value="8">15:00 开始</option>
+                    <option value="9">16:00 开始</option>
+                    <option value="10">17:00 开始</option>
+                    <option value="11">18:00 开始</option>
+                    <option value="12">19:00 开始</option>
+                    <option value="13">20:00 开始</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group-sub">
+                  <label for="rescheduleDuration">课程时长</label>
+                  <select id="rescheduleDuration" class="form-select-sm">
+                    <option value="1">1 小时 (60分钟)</option>
+                    <option value="2" selected>2 小时 (标准大课 120分钟)</option>
+                    <option value="3">3 小时 (实验课/长课 180分钟)</option>
+                    <option value="4">4 小时 (半天 240分钟)</option>
+                    <option value="5">5 小时 (300分钟)</option>
+                  </select>
+                </div>
+                <div class="form-group-sub">
+                  <label for="rescheduleRoom">调课后教室</label>
+                  <input type="text" id="rescheduleRoom" class="form-input-sm" placeholder="如 B1#204 / 原教室">
+                </div>
+              </div>
+              <!-- Realtime Calculated Time Preview -->
+              <div class="reschedule-time-preview" id="rescheduleTimePreview">
+                <span class="preview-icon">⏰</span>
+                <span class="preview-label">调课后具体时段：</span>
+                <strong class="preview-value" id="reschedulePreviewText">周二 09:00 - 11:00 (共 2 小时)</strong>
+              </div>
+              <div class="form-group-sub">
+                <label for="rescheduleScope">调课生效范围</label>
+                <select id="rescheduleScope" class="form-select-sm">
+                  <option value="single">仅当前周生效 (单周临时调课/补课)</option>
+                  <option value="all">全学期所有周生效 (永久调课)</option>
+                </select>
+              </div>
+              <div class="form-group-sub">
+                <label for="rescheduleReason">调课原因 / 备注</label>
+                <input type="text" id="rescheduleReason" class="form-input-sm" placeholder="如：因国庆节停课补课、老师改期3小时实验">
+              </div>
+              <button class="btn-primary full-width" id="confirmRescheduleBtn">
+                确认应用调课
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-actions-grid">
+            <button class="btn-pill" id="copyLocationBtn">复制教室信息</button>
+            <button class="btn-pill secondary" id="deleteCourseBtn">删除该课程</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Delete Confirmation (Single Week vs Whole Semester) -->
+    <div class="modal-backdrop" id="deleteConfirmModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge" style="color: #f43f5e;">⚠️ 删除确认</span>
+            <h3 class="modal-title">请选择删除范围</h3>
+          </div>
+          <button class="btn-close" id="closeDeleteModalBtn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="delete-course-target" id="deleteTargetCourseInfo">
+            <div class="del-code" id="delCourseCode">-</div>
+            <div class="del-name" id="delCourseName">课程详情</div>
+          </div>
+
+          <div class="delete-options-list">
+            <!-- Option 1: Current week only -->
+            <div class="delete-option-card" id="deleteOptionWeek">
+              <div class="option-header">
+                <span class="option-title">1️⃣ 仅取消本周课程 (单周停课)</span>
+                <span class="option-tag week">推荐</span>
+              </div>
+              <p class="option-desc">
+                仅在当前 <strong id="delCurrentWeekLabel">第 2 周</strong> 不显示此课程（适用于老师请假、单次放假停课等）。其他周次全部完好保留。
+              </p>
+              <button class="btn-secondary full-width" id="confirmDeleteWeekBtn">
+                仅从本周移除此课
+              </button>
+            </div>
+
+            <!-- Option 2: Full semester delete -->
+            <div class="delete-option-card danger" id="deleteOptionAll">
+              <div class="option-header">
+                <span class="option-title">2️⃣ 整学期彻底删除该课程</span>
+                <span class="option-tag all">移入回收站</span>
+              </div>
+              <p class="option-desc">
+                从本学期全部（第 1 ~ 14 周）课表中删除。删除后会自动存入<strong>【课程回收站】</strong>，可随时一键恢复，不用担心数据丢失。
+              </p>
+              <button class="btn-danger full-width" id="confirmDeleteAllBtn">
+                整学期删除该课程
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-cancel-row">
+            <button class="btn-cancel-link" id="cancelDeleteBtn">取消，保留该课程</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Course Recycle Bin / Restore -->
+    <div class="modal-backdrop" id="recycleBinModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge">Recovery Center</span>
+            <h3 class="modal-title">🗑️ 课程回收站与恢复</h3>
+          </div>
+          <button class="btn-close" id="closeRecycleModalBtn">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-tip">被删除的课程或单周停课记录均会保存在此，随时可点击恢复回课表：</p>
+          
+          <div class="recycle-list" id="recycleListContainer">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="recycle-footer-actions" style="text-align: center; margin-top: 10px;">
+            <button class="btn-cancel-link" id="clearRecycleBinBtn" style="color: #f43f5e;">
+              🗑️ 清空回收站
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-message" id="toastMessage"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data/academic_calendar.js"></script>
+  <script src="data/sample_schedule.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
