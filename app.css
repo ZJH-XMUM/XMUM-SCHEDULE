@@ -334,16 +334,26 @@ body.theme-light .semester-strip {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 64px;
+  min-width: 76px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.week-chip.is-current-week {
+  min-width: 98px;
+  padding: 6px 16px;
 }
 
 .week-chip .chip-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
 }
 
 .week-chip .chip-dates {
-  font-size: 0.65rem;
-  opacity: 0.7;
+  font-size: 0.63rem;
+  opacity: 0.75;
+  white-space: nowrap;
 }
 
 .week-chip:hover {
@@ -2152,52 +2162,67 @@ body.theme-light .reschedule-time-preview .preview-value {
 
   /* 5-day mode on mobile: Monday to Friday perfectly fits 100% width with NO horizontal scroll! */
   .timetable-table.five-days-mode {
-    grid-template-columns: 42px repeat(5, 1fr) !important;
-    grid-template-rows: 34px repeat(13, 52px);
+    grid-template-columns: 36px repeat(5, 1fr) !important;
+    grid-template-rows: 34px repeat(13, 72px) !important;
     min-width: 100% !important;
     width: 100% !important;
   }
 
   /* 7-day mode fallback */
   .timetable-table {
-    grid-template-columns: 46px repeat(7, minmax(68px, 1fr));
-    grid-template-rows: 34px repeat(13, 52px);
-    min-width: 522px;
+    grid-template-columns: 36px repeat(7, minmax(64px, 1fr));
+    grid-template-rows: 34px repeat(13, 72px) !important;
+    min-width: 484px;
   }
 
   .grid-cell-header {
-    padding: 6px 2px;
-    font-size: 0.68rem;
+    padding: 6px 1px;
+    font-size: 0.67rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .grid-time-slot {
-    height: 52px;
-    font-size: 0.65rem;
+    height: 72px !important;
+    font-size: 0.63rem;
   }
   .grid-time-slot .time-start {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
   }
   .grid-time-slot .time-end {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
   }
   .grid-empty-slot {
-    height: 52px;
+    height: 72px !important;
   }
   .course-card-block {
-    padding: 4px;
+    padding: 4px 3px;
     margin: 1px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
   }
   .course-code {
     font-size: 0.68rem;
     font-weight: 800;
+    line-height: 1.15;
+    word-break: break-all;
   }
   .course-title {
-    font-size: 0.64rem;
-    line-height: 1.2;
-    -webkit-line-clamp: 2;
+    font-size: 0.63rem;
+    line-height: 1.25;
+    -webkit-line-clamp: 3;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
   }
   .course-room {
-    font-size: 0.6rem;
-    padding: 0 3px;
+    font-size: 0.58rem;
+    padding: 0 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .modal-card {

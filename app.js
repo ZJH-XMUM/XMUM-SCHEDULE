@@ -128,6 +128,7 @@
     renderWeekChips();
     renderDayTabs();
     switchView(state.activeView);
+    renderView();
     renderCalendarMilestones();
     renderAcademicCalendar();
     updateRecycleCountBadge();
@@ -204,6 +205,11 @@
       el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
     }
 
+    if (state.schedule && state.schedule.semester) {
+      state.currentSemesterId = state.schedule.semester;
+      if (el.semesterSelect) el.semesterSelect.value = state.currentSemesterId;
+    }
+
     // Also fetch from server to ensure persistence across devices/refreshes
     syncScheduleFromServer();
   }
@@ -227,6 +233,9 @@
               state.currentSemesterId = state.schedule.semester;
               if (el.semesterSelect) el.semesterSelect.value = state.currentSemesterId;
             }
+            initRealToday();
+            renderWeekChips();
+            renderDayTabs();
             renderView();
             updateNextClassCard();
             updateRecycleCountBadge();
@@ -298,26 +307,43 @@
 
   function initRealToday() {
     const today = new Date();
-    const curYear = today.getFullYear();
-    // Default to Oct 8, 2026 (Thursday) if local device date is before 2026
-    const curDateStr = curYear < 2026 ? "2026-10-08" : formatLocalDate(today);
+    const sem = getCurrentSemesterData();
+    let curDateStr = formatLocalDate(today);
+
+    // Check if curDateStr falls within this semester's teaching weeks
+    let matchedWeek = null;
+    if (sem && sem.weeks) {
+      matchedWeek = sem.weeks.find(w => curDateStr >= w.start && curDateStr <= w.end);
+    }
+
+    // If local device date is outside semester bounds (e.g., development/testing on different year/month):
+    // Fallback to active teaching week (Week 3, Monday 2026-10-12)
+    if (!matchedWeek) {
+      if (sem && sem.weeks && sem.weeks.length >= 3) {
+        matchedWeek = sem.weeks[2]; // Week 3
+      } else if (sem && sem.weeks && sem.weeks.length > 0) {
+        matchedWeek = sem.weeks[0];
+      }
+      if (matchedWeek) {
+        // Pick Monday of this week (start date + 1 day since start is Sunday)
+        const parts = matchedWeek.start.split('-');
+        const sunday = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0);
+        const monday = new Date(sunday);
+        monday.setDate(monday.getDate() + 1);
+        curDateStr = formatLocalDate(monday);
+      } else {
+        curDateStr = "2026-10-12";
+      }
+    }
+
     state.realTodayDateStr = curDateStr;
 
     const parts = curDateStr.split('-');
-    const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
+    const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0);
     const dayIndex = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
     state.realTodayDay = dayIndex;
 
-    const sem = getCurrentSemesterData();
-    let currentWk = 2;
-    if (sem && sem.weeks) {
-      for (const w of sem.weeks) {
-        if (curDateStr >= w.start && curDateStr <= w.end) {
-          currentWk = w.week;
-          break;
-        }
-      }
-    }
+    const currentWk = matchedWeek ? matchedWeek.week : 3;
     state.realTodayWeek = currentWk;
     state.selectedWeek = currentWk;
     state.selectedDay = dayIndex;
@@ -480,7 +506,7 @@
       const chip = document.createElement('div');
       const isSelected = (w.week === state.selectedWeek);
       const isCurrentWeek = (w.week === state.realTodayWeek);
-      chip.className = `week-chip ${isSelected ? 'active' : ''} ${isCurrentWeek ? 'is-current-week-chip' : ''}`;
+      chip.className = `week-chip ${isSelected ? 'active' : ''} ${isCurrentWeek ? 'is-current-week is-current-week-chip' : ''}`;
       
       const startParts = w.start.split('-');
       const endParts = w.end.split('-');
@@ -754,25 +780,34 @@
   // 7. Daily Agenda Feed
   function renderDailyAgenda() {
     const sem = getCurrentSemesterData();
-    const currentWeekInfo = sem?.weeks.find(w => w.week === state.selectedWeek);
-    const dayDateStr = getDayDateString(currentWeekInfo, state.selectedDay);
+    const currentWeekNum = Number(state.selectedWeek);
+    const currentDayNum = Number(state.selectedDay || state.realTodayDay || 1);
+    const currentWeekInfo = sem?.weeks.find(w => Number(w.week) === currentWeekNum);
+    const dayDateStr = getDayDateString(currentWeekInfo, currentDayNum);
     const dayHoliday = getHolidayForDate(dayDateStr);
 
     const todayCourses = (state.schedule?.courses || [])
-      .filter(c => c.weeks && c.weeks.includes(state.selectedWeek))
-      .map(c => getEffectiveCourseForWeek(c, state.selectedWeek))
-      .filter(c => c.dayOfWeek === state.selectedDay)
+      .filter(c => {
+        if (!c.weeks) return true;
+        const wList = Array.isArray(c.weeks) ? c.weeks.map(Number) : [];
+        return wList.includes(currentWeekNum);
+      })
+      .map(c => getEffectiveCourseForWeek(c, currentWeekNum))
+      .filter(c => Number(c.dayOfWeek) === currentDayNum)
       .sort((a, b) => a.startSlot - b.startSlot);
 
     // Update active tab in dayTabs
-    el.dayTabsContainer.querySelectorAll('.day-tab').forEach(tab => {
-      const tabDay = parseInt(tab.dataset.day);
-      tab.classList.toggle('active', tabDay === state.selectedDay);
-    });
+    if (el.dayTabsContainer) {
+      el.dayTabsContainer.querySelectorAll('.day-tab').forEach(tab => {
+        const tabDay = parseInt(tab.dataset.day, 10);
+        tab.classList.toggle('active', tabDay === currentDayNum);
+      });
+    }
 
+    if (!el.dailyAgendaList) return;
     el.dailyAgendaList.innerHTML = '';
 
-    const isRealToday = (state.selectedWeek === state.realTodayWeek && state.selectedDay === state.realTodayDay);
+    const isRealToday = (currentWeekNum === Number(state.realTodayWeek) && currentDayNum === Number(state.realTodayDay));
 
     // If day is a public holiday, display prominent holiday banner
     if (dayHoliday) {
@@ -781,7 +816,7 @@
       holCard.innerHTML = `
         <span class="holiday-icon">🎉</span>
         <div>
-          <h4>${isRealToday ? '今日' : `${DAY_ZH[state.selectedDay - 1]}`}为法定公休日：${dayHoliday.name} (${dayDateStr})</h4>
+          <h4>${isRealToday ? '今日' : `${DAY_ZH[currentDayNum - 1]}`}为法定公休日：${dayHoliday.name} (${dayDateStr})</h4>
           <p>校历法定公共假日，全校常规教学停课；若任课教师安排有调课/补课，请见下方具体日程。</p>
         </div>
       `;
@@ -793,7 +828,7 @@
       emptyDiv.className = 'empty-state';
       emptyDiv.innerHTML = `
         <div class="empty-state-icon">☕️</div>
-        <h3>第 ${state.selectedWeek} 周 ${DAY_ZH[state.selectedDay - 1]} (${dayDateStr || ''}) 无课程</h3>
+        <h3>第 ${currentWeekNum} 周 ${DAY_ZH[currentDayNum - 1]} (${dayDateStr || ''}) 无课程</h3>
         <p>${dayHoliday ? '法定假期休假，无常规课程！' : '这一天没有任何课，可以自习或休息放松一下！'}</p>
       `;
       el.dailyAgendaList.appendChild(emptyDiv);
