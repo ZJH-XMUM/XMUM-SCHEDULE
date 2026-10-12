@@ -228,6 +228,8 @@ class handler(BaseHTTPRequestHandler):
                 res["success"] = True
             except Exception as e:
                 res = {"success": False, "error": f"解析失败: {str(e)}"}
+        elif parsed_path.endswith('/save_schedule'):
+            res = {"success": True}
         else:
             res = {"success": False, "error": "API Route Not Found"}
 
@@ -236,18 +238,30 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
 
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path).path
         
-        # 1. API Health Check
-        if parsed_path == '/api' or parsed_path == '/api/':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json; charset=utf-8')
+        # 1. If user visits /api or /api/ directly in browser, redirect them to the frontend app /
+        if parsed_path in ('/api', '/api/'):
+            self.send_response(302)
+            self.send_header('Location', '/')
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "XMUM API online"}).encode('utf-8'))
             return
 
-        # 2. Serve Static Frontend Files
+        # 2. API Schedule retrieval
+        if parsed_path == '/api/schedule':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            self.end_headers()
+            res = {"success": True, "schedule": {"studentName": "同学", "studentId": "", "courses": []}}
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+            return
+
+        # 3. Serve Static Frontend Files
         rel_path = parsed_path.lstrip('/')
         if not rel_path or rel_path == '/':
             rel_path = 'index.html'
@@ -285,3 +299,4 @@ class handler(BaseHTTPRequestHandler):
 
         self.send_response(404)
         self.end_headers()
+
