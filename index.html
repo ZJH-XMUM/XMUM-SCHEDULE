@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=8">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -477,9 +477,15 @@
     <!-- Toast Notification -->
     <div class="toast-message" id="toastMessage"></div>
 
+    <!-- Hidden compatibility elements to protect against any stale cached JS -->
+    <button id="addCustomCourseBtn" style="display:none;" aria-hidden="true"></button>
+    <button id="exportIcsBtn" style="display:none;" aria-hidden="true"></button>
+    <button id="loadDemoBtn" style="display:none;" aria-hidden="true"></button>
+    <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
+
   <!-- Scripts -->
-  <script src="data/academic_calendar.js"></script>
-  <script src="data/sample_schedule.js"></script>
-  <script src="app.js"></script>
+  <script src="data/academic_calendar.js?v=8"></script>
+  <script src="data/sample_schedule.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

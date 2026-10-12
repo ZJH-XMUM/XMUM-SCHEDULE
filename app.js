@@ -120,18 +120,23 @@
 
   // 1. Initializer
   function init() {
-    loadSavedSchedule();
-    applyTheme(state.theme);
-    initRealToday();
-    setupEventListeners();
-    updateSemesterInfo();
-    renderWeekChips();
-    renderDayTabs();
-    switchView(state.activeView);
-    renderView();
-    renderCalendarMilestones();
-    renderAcademicCalendar();
-    updateRecycleCountBadge();
+    try {
+      loadSavedSchedule();
+      applyTheme(state.theme);
+      initRealToday();
+      setupEventListeners();
+      updateSemesterInfo();
+      renderWeekChips();
+      renderDayTabs();
+      switchView(state.activeView);
+      renderView();
+      updateTodayBanner();
+      renderCalendarMilestones();
+      renderAcademicCalendar();
+      updateRecycleCountBadge();
+    } catch (err) {
+      console.error('Core init error:', err);
+    }
 
     // Register Service Worker for offline mobile app support
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
@@ -1595,13 +1600,26 @@
 
   // 14. Event Listeners Setup
   function setupEventListeners() {
+    const on = (element, evt, handler) => {
+      if (element) {
+        element.addEventListener(evt, handler);
+      }
+    };
+
+    // AC Sync Modal open/close (Priority listener)
+    on(el.syncModalBtn, 'click', () => openModal(el.syncModal));
+    on(el.closeSyncModalBtn, 'click', () => closeModal(el.syncModal));
+    on(el.syncModal, 'click', (e) => {
+      if (e.target === el.syncModal) closeModal(el.syncModal);
+    });
+
     // Theme toggle
-    el.themeToggleBtn.addEventListener('click', () => {
+    on(el.themeToggleBtn, 'click', () => {
       applyTheme(state.theme === 'dark' ? 'light' : 'dark');
     });
 
     // Semester switcher
-    el.semesterSelect.addEventListener('change', (e) => {
+    on(el.semesterSelect, 'change', (e) => {
       state.currentSemesterId = e.target.value;
       updateSemesterInfo();
       renderWeekChips();
@@ -1609,28 +1627,30 @@
     });
 
     // Week navigation buttons
-    el.prevWeekBtn.addEventListener('click', () => {
+    on(el.prevWeekBtn, 'click', () => {
       selectWeek(state.selectedWeek - 1);
     });
 
-    el.nextWeekBtn.addEventListener('click', () => {
+    on(el.nextWeekBtn, 'click', () => {
       selectWeek(state.selectedWeek + 1);
     });
 
     // Bottom Navigation
-    el.navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        if (item.id === 'navSyncModal') {
-          el.syncModal.classList.add('open');
-          return;
-        }
-        const view = item.dataset.view;
-        if (view) switchView(view);
+    if (el.navItems) {
+      el.navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          if (item.id === 'navSyncModal') {
+            openModal(el.syncModal);
+            return;
+          }
+          const view = item.dataset.view;
+          if (view) switchView(view);
+        });
       });
-    });
+    }
 
     // Calendar Year Switcher Tabs
-    el.calendarYearTabs.addEventListener('click', (e) => {
+    on(el.calendarYearTabs, 'click', (e) => {
       const tab = e.target.closest('.year-tab');
       if (!tab) return;
       el.calendarYearTabs.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
@@ -1640,32 +1660,21 @@
     });
 
     // Today Jump button
-    el.todayJumpBtn.addEventListener('click', () => {
+    on(el.todayJumpBtn, 'click', () => {
       goToToday();
     });
 
     // Add Course placeholder
-    if (el.addCustomCourseBtn) {
-      el.addCustomCourseBtn.addEventListener('click', () => {
-        showToast('可点击具体课程进行查看与操作');
-      });
-    }
-
-    // Sync Modal open/close
-    el.syncModalBtn.addEventListener('click', () => openModal(el.syncModal));
-    el.closeSyncModalBtn.addEventListener('click', () => closeModal(el.syncModal));
-    el.syncModal.addEventListener('click', (e) => {
-      if (e.target === el.syncModal) closeModal(el.syncModal);
+    on(el.addCustomCourseBtn, 'click', () => {
+      showToast('可点击具体课程进行查看与操作');
     });
 
     // Toggle 5-Day / 7-Day View
-    if (el.toggleDaysBtn) {
-      el.toggleDaysBtn.addEventListener('click', () => {
-        state.weekGridDays = (state.weekGridDays === 5 ? 7 : 5);
-        renderTimetableGrid();
-        showToast(`已切换至 ${state.weekGridDays} 天模式`);
-      });
-    }
+    on(el.toggleDaysBtn, 'click', () => {
+      state.weekGridDays = (state.weekGridDays === 5 ? 7 : 5);
+      renderTimetableGrid();
+      showToast(`已切换至 ${state.weekGridDays} 天模式`);
+    });
 
     // Modal internal tabs
     document.querySelectorAll('.modal-tab').forEach(tab => {
@@ -1673,38 +1682,35 @@
         document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.modal-tab-pane').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById(tab.dataset.target).classList.add('active');
+        const target = document.getElementById(tab.dataset.target);
+        if (target) target.classList.add('active');
       });
     });
 
     // Forms & Import Actions
-    el.acLoginForm.addEventListener('submit', handleAcLogin);
-    el.parseHtmlBtn.addEventListener('click', handleHtmlParse);
-    if (el.loadDemoBtn) {
-      el.loadDemoBtn.addEventListener('click', () => {
-        state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-        saveSchedule();
-        el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
-        el.syncModal.classList.remove('open');
-        showToast('已载入通用演示课表');
-        renderView();
-        updateNextClassCard();
-      });
-    }
+    on(el.acLoginForm, 'submit', handleAcLogin);
+    on(el.parseHtmlBtn, 'click', handleHtmlParse);
+    on(el.loadDemoBtn, 'click', () => {
+      state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+      saveSchedule();
+      if (el.studentNameDisplay) el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
+      closeModal(el.syncModal);
+      showToast('已载入通用演示课表');
+      renderView();
+      updateNextClassCard();
+    });
 
     // ICS Export Button
-    if (el.exportIcsBtn) {
-      el.exportIcsBtn.addEventListener('click', exportScheduleToIcs);
-    }
+    on(el.exportIcsBtn, 'click', exportScheduleToIcs);
 
     // Detail Modal Close
-    el.closeDetailModalBtn.addEventListener('click', closeCourseDetail);
-    el.courseDetailModal.addEventListener('click', (e) => {
+    on(el.closeDetailModalBtn, 'click', closeCourseDetail);
+    on(el.courseDetailModal, 'click', (e) => {
       if (e.target === el.courseDetailModal) closeCourseDetail();
     });
 
     // Copy location
-    el.copyLocationBtn.addEventListener('click', () => {
+    on(el.copyLocationBtn, 'click', () => {
       if (state.selectedCourse) {
         navigator.clipboard?.writeText(state.selectedCourse.location);
         showToast(`已复制教室代码: ${state.selectedCourse.location}`);
@@ -1712,48 +1718,40 @@
     });
 
     // Safe Delete Course: open confirmation modal
-    el.deleteCourseBtn.addEventListener('click', () => {
+    on(el.deleteCourseBtn, 'click', () => {
       if (state.selectedCourse) {
         openDeleteConfirmModal(state.selectedCourse);
       }
     });
 
     // Delete Option 1: Single week cancel
-    if (el.confirmDeleteWeekBtn) {
-      el.confirmDeleteWeekBtn.addEventListener('click', () => {
-        if (state.pendingDeleteCourse) {
-          deleteCourseSingleWeek(state.pendingDeleteCourse);
-        }
-      });
-    }
+    on(el.confirmDeleteWeekBtn, 'click', () => {
+      if (state.pendingDeleteCourse) {
+        deleteCourseSingleWeek(state.pendingDeleteCourse);
+      }
+    });
 
     // Delete Option 2: Full semester delete
-    if (el.confirmDeleteAllBtn) {
-      el.confirmDeleteAllBtn.addEventListener('click', () => {
-        if (state.pendingDeleteCourse) {
-          deleteCourseFullSemester(state.pendingDeleteCourse);
-        }
-      });
-    }
+    on(el.confirmDeleteAllBtn, 'click', () => {
+      if (state.pendingDeleteCourse) {
+        deleteCourseFullSemester(state.pendingDeleteCourse);
+      }
+    });
 
     // Cancel deletion buttons
-    if (el.cancelDeleteBtn) el.cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
-    if (el.closeDeleteModalBtn) el.closeDeleteModalBtn.addEventListener('click', closeDeleteConfirmModal);
-    if (el.deleteConfirmModal) {
-      el.deleteConfirmModal.addEventListener('click', (e) => {
-        if (e.target === el.deleteConfirmModal) closeDeleteConfirmModal();
-      });
-    }
+    on(el.cancelDeleteBtn, 'click', closeDeleteConfirmModal);
+    on(el.closeDeleteModalBtn, 'click', closeDeleteConfirmModal);
+    on(el.deleteConfirmModal, 'click', (e) => {
+      if (e.target === el.deleteConfirmModal) closeDeleteConfirmModal();
+    });
 
     // Recycle Bin open / close
-    if (el.recycleBinBtn) el.recycleBinBtn.addEventListener('click', openRecycleBinModal);
-    if (el.recycleBinPillBtn) el.recycleBinPillBtn.addEventListener('click', openRecycleBinModal);
-    if (el.closeRecycleModalBtn) el.closeRecycleModalBtn.addEventListener('click', closeRecycleBinModal);
-    if (el.recycleBinModal) {
-      el.recycleBinModal.addEventListener('click', (e) => {
-        if (e.target === el.recycleBinModal) closeRecycleBinModal();
-      });
-    }
+    on(el.recycleBinBtn, 'click', openRecycleBinModal);
+    on(el.recycleBinPillBtn, 'click', openRecycleBinModal);
+    on(el.closeRecycleModalBtn, 'click', closeRecycleBinModal);
+    on(el.recycleBinModal, 'click', (e) => {
+      if (e.target === el.recycleBinModal) closeRecycleBinModal();
+    });
 
     // Restore all default courses
     if (el.restoreDefaultCoursesBtn) {

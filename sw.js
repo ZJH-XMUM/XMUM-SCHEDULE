@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v7';
+const CACHE_NAME = 'xmum-schedule-v8';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
@@ -51,10 +51,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for static assets
+  // Network-first with cache fallback for code assets (html, js, css)
+  const isCodeAsset = url.pathname.endsWith('.html') ||
+                      url.pathname.endsWith('.js') ||
+                      url.pathname.endsWith('.css') ||
+                      url.pathname === '/' ||
+                      url.pathname.endsWith('/');
+
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first with network fallback for images and static media
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+      return cachedResponse || fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -63,8 +85,6 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
     })
   );
 });
