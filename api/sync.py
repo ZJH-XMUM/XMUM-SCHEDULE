@@ -201,32 +201,18 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
         
-        parsed_path = urllib.parse.urlparse(self.path).path
-        
-        if parsed_path.endswith('/sync'):
-            try:
-                data = json.loads(post_data.decode('utf-8'))
-                username = data.get('username', '').strip()
-                password = data.get('password', '').strip()
-                semester = data.get('semester', '2026/09')
-                
-                if not username or not password:
-                    res = {"success": False, "error": "请输入学号和密码"}
-                else:
-                    res = fetch_from_xmum_ac(username, password, semester)
-            except Exception as e:
-                res = {"success": False, "error": f"请求解析异常: {str(e)}"}
-
-        elif parsed_path.endswith('/parse_html'):
-            try:
-                data = json.loads(post_data.decode('utf-8'))
-                html_code = data.get('html', '')
-                res = parse_timetable_html(html_code)
-                res["success"] = True
-            except Exception as e:
-                res = {"success": False, "error": f"解析失败: {str(e)}"}
-        else:
-            res = {"success": False, "error": "Not Found"}
+        try:
+            data = json.loads(post_data.decode('utf-8'))
+            username = data.get('username', '').strip()
+            password = data.get('password', '').strip()
+            semester = data.get('semester', '2026/09')
+            
+            if not username or not password:
+                res = {"success": False, "error": "请输入学号和密码"}
+            else:
+                res = fetch_from_xmum_ac(username, password, semester)
+        except Exception as e:
+            res = {"success": False, "error": f"请求解析异常: {str(e)}"}
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -237,4 +223,4 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.end_headers()
-        self.wfile.write(json.dumps({"status": "XMUM API online"}).encode('utf-8'))
+        self.wfile.write(json.dumps({"status": "AC Sync API online"}).encode('utf-8'))
