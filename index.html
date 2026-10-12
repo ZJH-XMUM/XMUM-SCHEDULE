@@ -46,24 +46,10 @@
             <span class="trash-icon">🗑️</span>
             <span class="badge-count hidden" id="recycleCountBadge">0</span>
           </button>
-          <div class="sync-action-wrapper">
-            <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-              <span class="btn-badge-dot"></span>
-            </button>
-            <!-- First-time User Onboarding Guide Tooltip -->
-            <div class="sync-onboarding-popover" id="syncOnboardingPopover">
-              <div class="popover-arrow"></div>
-              <div class="popover-body">
-                <div class="popover-header">
-                  <span class="popover-badge">✨ 第一次使用</span>
-                  <button class="popover-close-btn" id="closeOnboardingPopoverBtn" aria-label="关闭提示">×</button>
-                </div>
-                <div class="popover-text">点这里输入 AC 账号密码，一键同步本学期课程！</div>
-                <button class="popover-action-btn" id="onboardingStartSyncBtn">立即添加课程 👉</button>
-              </div>
-            </div>
-          </div>
+          <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            <span class="btn-badge-dot"></span>
+          </button>
           <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
             <span class="theme-icon">🌙</span>
           </button>
@@ -127,7 +113,7 @@
       </section>
 
       <!-- View: Weekly Timetable Grid -->
-      <section class="view-panel active" id="weeklyGridView">
+      <section class="view-panel" id="weeklyGridView">
         <div class="grid-controls">
           <div class="grid-title-info">
             <h2 class="view-title" id="gridWeekTitle">第 2 周 课表</h2>
@@ -135,28 +121,21 @@
           </div>
           <div class="grid-actions">
             <button class="btn-pill" id="todayJumpBtn">回到今天</button>
+            <button class="btn-pill secondary" id="toggleDaysBtn">📅 完整7天</button>
             <button class="btn-pill secondary" id="addCustomCourseBtn">+ 记事</button>
           </div>
         </div>
 
-        <!-- Empty schedule guide banner (shown when courses.length === 0) -->
-        <div class="empty-schedule-card" id="emptyScheduleCard">
-          <div class="empty-card-icon">📚</div>
-          <h3 class="empty-card-title">当前课表暂无课程</h3>
-          <p class="empty-card-desc">点击右上角同步按钮，输入 AC 教务学号和密码，即可秒级自动同步您的全部课程！</p>
-          <button class="btn-primary" id="emptyCardSyncBtn">一键同步 AC 课表</button>
-        </div>
-
         <!-- Timetable Grid Matrix -->
         <div class="timetable-scroll-wrapper">
-          <div class="timetable-table" id="timetableGrid">
+          <div class="timetable-table five-days-mode" id="timetableGrid">
             <!-- Dynamically generated timetable matrix -->
           </div>
         </div>
       </section>
 
-      <!-- View: Daily Agenda Feed -->
-      <section class="view-panel" id="dailyAgendaView">
+      <!-- View: Daily Agenda Feed (Default Home View) -->
+      <section class="view-panel active" id="dailyAgendaView">
         <div class="agenda-controls">
           <div class="day-tabs" id="dayTabsContainer">
             <!-- Dynamically populated by renderDayTabs() -->
@@ -205,13 +184,13 @@
 
     <!-- Bottom Navigation Bar (Mobile Thumb Zone) -->
     <nav class="bottom-nav">
-      <button class="nav-item active" data-view="weeklyGridView" id="navWeekGrid">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">周课表</span>
-      </button>
-      <button class="nav-item" data-view="dailyAgendaView" id="navDailyAgenda">
+      <button class="nav-item active" data-view="dailyAgendaView" id="navDailyAgenda">
         <span class="nav-icon">📅</span>
         <span class="nav-label">今日看板</span>
+      </button>
+      <button class="nav-item" data-view="weeklyGridView" id="navWeekGrid">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">周课表</span>
       </button>
       <button class="nav-item" data-view="calendarOverviewView" id="navCalendar">
         <span class="nav-icon">🗓️</span>

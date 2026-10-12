@@ -13,7 +13,8 @@
     realTodayDay: 4,      // 1: Mon, 2: Tue, 3: Wed, 4: Thu ... 7: Sun
     selectedWeek: 2,      // Currently viewed week
     selectedDay: 4,       // Currently viewed day tab (1..7)
-    activeView: 'weeklyGridView',
+    activeView: 'dailyAgendaView',
+    weekGridDays: 5,
     activeCalendarYear: '2026',
     schedule: null,
     selectedCourse: null,
@@ -96,11 +97,7 @@
     closeRecycleModalBtn: document.getElementById('closeRecycleModalBtn'),
     recycleListContainer: document.getElementById('recycleListContainer'),
     clearRecycleBinBtn: document.getElementById('clearRecycleBinBtn'),
-    syncOnboardingPopover: document.getElementById('syncOnboardingPopover'),
-    closeOnboardingPopoverBtn: document.getElementById('closeOnboardingPopoverBtn'),
-    onboardingStartSyncBtn: document.getElementById('onboardingStartSyncBtn'),
-    emptyScheduleCard: document.getElementById('emptyScheduleCard'),
-    emptyCardSyncBtn: document.getElementById('emptyCardSyncBtn'),
+    toggleDaysBtn: document.getElementById('toggleDaysBtn'),
     navItems: document.querySelectorAll('.bottom-nav .nav-item')
   };
 
@@ -121,28 +118,6 @@
     }
   }
 
-  function updateEmptyScheduleState() {
-    const hasCourses = state.schedule && state.schedule.courses && state.schedule.courses.length > 0;
-    if (el.emptyScheduleCard) {
-      if (!hasCourses) {
-        el.emptyScheduleCard.classList.add('show');
-      } else {
-        el.emptyScheduleCard.classList.remove('show');
-      }
-    }
-    
-    // First-time onboarding popover hint
-    if (!hasCourses && !localStorage.getItem('xmum_onboarding_dismissed')) {
-      if (el.syncOnboardingPopover) {
-        el.syncOnboardingPopover.classList.add('show');
-      }
-    } else {
-      if (el.syncOnboardingPopover) {
-        el.syncOnboardingPopover.classList.remove('show');
-      }
-    }
-  }
-
   // 1. Initializer
   function init() {
     loadSavedSchedule();
@@ -152,7 +127,7 @@
     updateSemesterInfo();
     renderWeekChips();
     renderDayTabs();
-    renderView();
+    switchView(state.activeView);
     renderCalendarMilestones();
     renderAcademicCalendar();
     updateRecycleCountBadge();
@@ -637,6 +612,16 @@
 
     // 1. Header Row
     // First corner empty header
+    // Total visible days: 5 (Mon..Fri workweek) or 7 (Full week)
+    const totalDays = state.weekGridDays || 5;
+    if (totalDays === 5) {
+      el.timetableGrid.classList.add('five-days-mode');
+      if (el.toggleDaysBtn) el.toggleDaysBtn.textContent = '📅 完整7天';
+    } else {
+      el.timetableGrid.classList.remove('five-days-mode');
+      if (el.toggleDaysBtn) el.toggleDaysBtn.textContent = '📅 5天模式';
+    }
+
     const cornerTh = document.createElement('div');
     cornerTh.className = 'grid-cell-header';
     cornerTh.style.gridColumn = '1';
@@ -644,8 +629,8 @@
     cornerTh.textContent = '时间';
     el.timetableGrid.appendChild(cornerTh);
 
-    // 7 Day Headers with Holiday Indicator
-    for (let d = 1; d <= 7; d++) {
+    // Day Headers (1..totalDays)
+    for (let d = 1; d <= totalDays; d++) {
       const dayHeader = document.createElement('div');
       const isToday = (state.selectedWeek === state.realTodayWeek && d === state.realTodayDay);
       const holInfo = weekHolidays[d];
@@ -673,7 +658,7 @@
       el.timetableGrid.appendChild(dayHeader);
     }
 
-    // 2. Render background grid: Time labels in Col 1, and 7 Empty slots for every row
+    // 2. Render background grid: Time labels in Col 1, and Empty slots for 1..totalDays
     TIME_SLOTS_DEF.forEach((slot, slotIdx) => {
       const rowIdx = slotIdx + 2; // Row 1 is header, Row 2 is slot 1...
 
@@ -691,8 +676,8 @@
       `;
       el.timetableGrid.appendChild(timeCell);
 
-      // 7 Day Empty Slot Cells (Col 2..8, Row rowIdx)
-      for (let day = 1; day <= 7; day++) {
+      // Day Empty Slot Cells (Col 2..totalDays+1, Row rowIdx)
+      for (let day = 1; day <= totalDays; day++) {
         const holInfo = weekHolidays[day];
         const emptySlot = document.createElement('div');
         emptySlot.className = `grid-empty-slot ${holInfo.holiday ? 'holiday-day-slot' : ''}`;
@@ -719,11 +704,12 @@
 
     activeCourses.forEach(course => {
       if (!course.dayOfWeek || !course.startSlot) return;
+      if (course.dayOfWeek > totalDays) return; // Hide weekend courses in 5-day mode
       const holInfo = weekHolidays[course.dayOfWeek] || {};
 
       const courseCard = document.createElement('div');
       courseCard.className = 'course-card-block';
-      const col = course.dayOfWeek + 1; // 1 -> Col 2 (Mon) ... 7 -> Col 8 (Sun)
+      const col = course.dayOfWeek + 1; // 1 -> Col 2 (Mon) ...
       const startRow = course.startSlot + 1; // Slot 1 -> Row 2, Slot 8 -> Row 9...
       const span = course.slotSpan || 1;
 
@@ -746,21 +732,14 @@
         holidayAlertHtml = `<div class="course-holiday-alert">⚠️ 逢假: ${holInfo.holiday.name}</div>`;
       }
 
-      const courseStart = course.startTime || (TIME_SLOTS_DEF[course.startSlot - 1] ? TIME_SLOTS_DEF[course.startSlot - 1].start : '');
-      const courseEnd = course.endTime || (TIME_SLOTS_DEF[course.startSlot + (course.slotSpan || 1) - 2] ? TIME_SLOTS_DEF[course.startSlot + (course.slotSpan || 1) - 2].end : '');
-      const timeDisplayHtml = (courseStart && courseEnd)
-        ? `<div class="course-card-time">🕒 ${courseStart} - ${courseEnd}</div>`
-        : '';
-
       courseCard.innerHTML = `
         <div>
           <div class="course-code">${course.code}</div>
-          <div class="course-title">${course.name}</div>
-          ${timeDisplayHtml}
+          <div class="course-title" title="${course.name}">${course.name}</div>
           ${badgesHtml}
           ${holidayAlertHtml}
         </div>
-        <div class="course-room">${course.location}</div>
+        <div class="course-room">📍 ${course.location || 'TBA'}</div>
       `;
 
       courseCard.addEventListener('click', () => {
@@ -954,7 +933,6 @@
   }
 
   function renderView() {
-    updateEmptyScheduleState();
     if (state.activeView === 'weeklyGridView') {
       renderTimetableGrid();
     } else if (state.activeView === 'dailyAgendaView') {
@@ -1381,21 +1359,25 @@
 
       const res = await response.json();
       if (res.success && res.courses && res.courses.length > 0) {
+        state.currentSemesterId = semester;
+        if (el.semesterSelect) el.semesterSelect.value = semester;
         state.schedule = {
           studentName: res.studentName || username,
           studentId: username,
           semester: semester,
           lastUpdated: new Date().toISOString(),
-          courses: res.courses
+          courses: res.courses,
+          deletedCourses: [],
+          rescheduledCourses: {}
         };
         saveSchedule();
         el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
         closeModal(el.syncModal);
-        showToast('🎉 AC 课表同步成功！已载入最新课程。');
+        showToast(`🎉 成功同步 ${res.courses.length} 门课程！已载入课表。`);
         renderView();
         updateNextClassCard();
       } else {
-        statusMsg.textContent = res.error || '未能在该学期找到课表或登录未通过';
+        statusMsg.textContent = res.error || `在 ${semester} 未找到课表，请核对学期或使用旁边的 HTML 源码导入`;
         statusMsg.style.color = '#f43f5e';
       }
     } catch (err) {
@@ -1632,36 +1614,19 @@
       showToast('可点击具体课程进行查看与操作');
     });
 
-    // Sync Modal open/close & Onboarding
-    el.syncModalBtn.addEventListener('click', () => {
-      if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
-      localStorage.setItem('xmum_onboarding_dismissed', '1');
-      openModal(el.syncModal);
-    });
+    // Sync Modal open/close
+    el.syncModalBtn.addEventListener('click', () => openModal(el.syncModal));
     el.closeSyncModalBtn.addEventListener('click', () => closeModal(el.syncModal));
     el.syncModal.addEventListener('click', (e) => {
       if (e.target === el.syncModal) closeModal(el.syncModal);
     });
 
-    if (el.closeOnboardingPopoverBtn) {
-      el.closeOnboardingPopoverBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
-        localStorage.setItem('xmum_onboarding_dismissed', '1');
-      });
-    }
-
-    if (el.onboardingStartSyncBtn) {
-      el.onboardingStartSyncBtn.addEventListener('click', () => {
-        if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
-        localStorage.setItem('xmum_onboarding_dismissed', '1');
-        openModal(el.syncModal);
-      });
-    }
-
-    if (el.emptyCardSyncBtn) {
-      el.emptyCardSyncBtn.addEventListener('click', () => {
-        openModal(el.syncModal);
+    // Toggle 5-Day / 7-Day View
+    if (el.toggleDaysBtn) {
+      el.toggleDaysBtn.addEventListener('click', () => {
+        state.weekGridDays = (state.weekGridDays === 5 ? 7 : 5);
+        renderTimetableGrid();
+        showToast(`已切换至 ${state.weekGridDays} 天模式`);
       });
     }
 
