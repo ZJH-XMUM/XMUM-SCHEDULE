@@ -205,10 +205,21 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
         parsed_path = urllib.parse.urlparse(self.path).path
+        forwarded_path = self.headers.get('x-forwarded-uri', '') or self.headers.get('x-matched-path', '') or ''
         
-        if parsed_path.endswith('/sync'):
-            try:
+        data = {}
+        try:
+            if post_data:
                 data = json.loads(post_data.decode('utf-8'))
+        except Exception:
+            pass
+
+        is_sync = '/sync' in parsed_path or '/sync' in forwarded_path or ('username' in data and 'password' in data)
+        is_parse = '/parse_html' in parsed_path or '/parse_html' in forwarded_path or ('html' in data and 'username' not in data)
+        is_save = '/save_schedule' in parsed_path or '/save_schedule' in forwarded_path
+
+        if is_sync:
+            try:
                 username = data.get('username', '').strip()
                 password = data.get('password', '').strip()
                 semester = data.get('semester', '2026/09')
@@ -220,18 +231,17 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 res = {"success": False, "error": f"请求解析异常: {str(e)}"}
 
-        elif parsed_path.endswith('/parse_html'):
+        elif is_parse:
             try:
-                data = json.loads(post_data.decode('utf-8'))
                 html_code = data.get('html', '')
                 res = parse_timetable_html(html_code)
                 res["success"] = True
             except Exception as e:
                 res = {"success": False, "error": f"解析失败: {str(e)}"}
-        elif parsed_path.endswith('/save_schedule'):
+        elif is_save:
             res = {"success": True}
         else:
-            res = {"success": False, "error": "API Route Not Found"}
+            res = {"success": False, "error": f"API Route Not Found (path={self.path}, fwd={forwarded_path})"}
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -243,16 +253,10 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path).path
+        forwarded_path = self.headers.get('x-forwarded-uri', '') or self.headers.get('x-matched-path', '') or ''
         
-        # 1. If user visits /api or /api/ directly in browser, redirect them to the frontend app /
-        if parsed_path in ('/api', '/api/'):
-            self.send_response(302)
-            self.send_header('Location', '/')
-            self.end_headers()
-            return
-
-        # 2. API Schedule retrieval
-        if parsed_path == '/api/schedule':
+        # 1. API Schedule retrieval
+        if '/schedule' in parsed_path or '/schedule' in forwarded_path:
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -260,6 +264,14 @@ class handler(BaseHTTPRequestHandler):
             res = {"success": True, "schedule": {"studentName": "同学", "studentId": "", "courses": []}}
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
+
+        # 2. If user visits /api or /api/ directly in browser, redirect them to the frontend app /
+        if parsed_path in ('/api', '/api/') or forwarded_path in ('/api', '/api/'):
+            self.send_response(302)
+            self.send_header('Location', '/')
+            self.end_headers()
+            return
+
 
         # 3. Serve Static Frontend Files
         rel_path = parsed_path.lstrip('/')
