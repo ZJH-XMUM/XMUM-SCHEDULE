@@ -23,8 +23,8 @@
   ],
   "start_url": "./",
   "scope": "./",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
   "display": "standalone",
   "orientation": "portrait"
 }

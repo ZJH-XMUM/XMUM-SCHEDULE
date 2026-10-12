@@ -26,6 +26,8 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="theme-dark">
+  <!-- Status bar mask for iOS standalone PWA & notch devices -->
+  <div class="ios-status-bar-shield" id="statusBarShield"></div>
   <div class="app-container" id="app">
     <!-- Top Navigation / Header -->
     <header class="app-header">
@@ -44,10 +46,24 @@
             <span class="trash-icon">🗑️</span>
             <span class="badge-count hidden" id="recycleCountBadge">0</span>
           </button>
-          <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-            <span class="btn-badge-dot"></span>
-          </button>
+          <div class="sync-action-wrapper">
+            <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              <span class="btn-badge-dot"></span>
+            </button>
+            <!-- First-time User Onboarding Guide Tooltip -->
+            <div class="sync-onboarding-popover" id="syncOnboardingPopover">
+              <div class="popover-arrow"></div>
+              <div class="popover-body">
+                <div class="popover-header">
+                  <span class="popover-badge">✨ 第一次使用</span>
+                  <button class="popover-close-btn" id="closeOnboardingPopoverBtn" aria-label="关闭提示">×</button>
+                </div>
+                <div class="popover-text">点这里输入 AC 账号密码，一键同步本学期课程！</div>
+                <button class="popover-action-btn" id="onboardingStartSyncBtn">立即添加课程 👉</button>
+              </div>
+            </div>
+          </div>
           <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
             <span class="theme-icon">🌙</span>
           </button>
@@ -119,9 +135,16 @@
           </div>
           <div class="grid-actions">
             <button class="btn-pill" id="todayJumpBtn">回到今天</button>
-            <button class="btn-pill secondary" id="recycleBinPillBtn">🗑️ 回收站</button>
             <button class="btn-pill secondary" id="addCustomCourseBtn">+ 记事</button>
           </div>
+        </div>
+
+        <!-- Empty schedule guide banner (shown when courses.length === 0) -->
+        <div class="empty-schedule-card" id="emptyScheduleCard">
+          <div class="empty-card-icon">📚</div>
+          <h3 class="empty-card-title">当前课表暂无课程</h3>
+          <p class="empty-card-desc">点击右上角同步按钮，输入 AC 教务学号和密码，即可秒级自动同步您的全部课程！</p>
+          <button class="btn-primary" id="emptyCardSyncBtn">一键同步 AC 课表</button>
         </div>
 
         <!-- Timetable Grid Matrix -->

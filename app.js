@@ -96,8 +96,52 @@
     closeRecycleModalBtn: document.getElementById('closeRecycleModalBtn'),
     recycleListContainer: document.getElementById('recycleListContainer'),
     clearRecycleBinBtn: document.getElementById('clearRecycleBinBtn'),
+    syncOnboardingPopover: document.getElementById('syncOnboardingPopover'),
+    closeOnboardingPopoverBtn: document.getElementById('closeOnboardingPopoverBtn'),
+    onboardingStartSyncBtn: document.getElementById('onboardingStartSyncBtn'),
+    emptyScheduleCard: document.getElementById('emptyScheduleCard'),
+    emptyCardSyncBtn: document.getElementById('emptyCardSyncBtn'),
     navItems: document.querySelectorAll('.bottom-nav .nav-item')
   };
+
+  // Modal Helpers with Mobile Scroll-Lock
+  function openModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.add('open');
+    document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
+  }
+
+  function closeModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.remove('open');
+    if (!document.querySelector('.modal-backdrop.open')) {
+      document.body.classList.remove('modal-open');
+      document.documentElement.classList.remove('modal-open');
+    }
+  }
+
+  function updateEmptyScheduleState() {
+    const hasCourses = state.schedule && state.schedule.courses && state.schedule.courses.length > 0;
+    if (el.emptyScheduleCard) {
+      if (!hasCourses) {
+        el.emptyScheduleCard.classList.add('show');
+      } else {
+        el.emptyScheduleCard.classList.remove('show');
+      }
+    }
+    
+    // First-time onboarding popover hint
+    if (!hasCourses && !localStorage.getItem('xmum_onboarding_dismissed')) {
+      if (el.syncOnboardingPopover) {
+        el.syncOnboardingPopover.classList.add('show');
+      }
+    } else {
+      if (el.syncOnboardingPopover) {
+        el.syncOnboardingPopover.classList.remove('show');
+      }
+    }
+  }
 
   // 1. Initializer
   function init() {
@@ -910,6 +954,7 @@
   }
 
   function renderView() {
+    updateEmptyScheduleState();
     if (state.activeView === 'weeklyGridView') {
       renderTimetableGrid();
     } else if (state.activeView === 'dailyAgendaView') {
@@ -998,11 +1043,11 @@
     document.getElementById('toggleRescheduleBtn').textContent = '展开调课设置 ▾';
     updateReschedulePreview();
 
-    el.courseDetailModal.classList.add('open');
+    openModal(el.courseDetailModal);
   }
 
   function closeCourseDetail() {
-    el.courseDetailModal.classList.remove('open');
+    closeModal(el.courseDetailModal);
   }
 
   // 11. Toast Notifications with Undo Capability
@@ -1040,12 +1085,12 @@
     el.delCourseCode.textContent = course.code;
     el.delCourseName.textContent = course.name;
     el.delCurrentWeekLabel.textContent = `第 ${state.selectedWeek} 周`;
-    el.deleteConfirmModal.classList.add('open');
+    openModal(el.deleteConfirmModal);
   }
 
   function closeDeleteConfirmModal() {
     state.pendingDeleteCourse = null;
-    el.deleteConfirmModal.classList.remove('open');
+    closeModal(el.deleteConfirmModal);
   }
 
   function deleteCourseSingleWeek(course) {
@@ -1117,11 +1162,11 @@
   // 11.2 Recycle Bin
   function openRecycleBinModal() {
     renderRecycleBin();
-    el.recycleBinModal.classList.add('open');
+    openModal(el.recycleBinModal);
   }
 
   function closeRecycleBinModal() {
-    el.recycleBinModal.classList.remove('open');
+    closeModal(el.recycleBinModal);
   }
 
   function updateRecycleCountBadge() {
@@ -1345,7 +1390,7 @@
         };
         saveSchedule();
         el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
-        el.syncModal.classList.remove('open');
+        closeModal(el.syncModal);
         showToast('🎉 AC 课表同步成功！已载入最新课程。');
         renderView();
         updateNextClassCard();
@@ -1501,7 +1546,7 @@
       state.schedule.courses = parsedData.courses;
       if (parsedData.studentName) state.schedule.studentName = parsedData.studentName;
       saveSchedule();
-      el.syncModal.classList.remove('open');
+      closeModal(el.syncModal);
       showToast('🎉 成功解析出 ' + parsedData.courses.length + ' 门课程！');
       renderView();
       updateNextClassCard();
@@ -1587,12 +1632,38 @@
       showToast('可点击具体课程进行查看与操作');
     });
 
-    // Sync Modal open/close
-    el.syncModalBtn.addEventListener('click', () => el.syncModal.classList.add('open'));
-    el.closeSyncModalBtn.addEventListener('click', () => el.syncModal.classList.remove('open'));
-    el.syncModal.addEventListener('click', (e) => {
-      if (e.target === el.syncModal) el.syncModal.classList.remove('open');
+    // Sync Modal open/close & Onboarding
+    el.syncModalBtn.addEventListener('click', () => {
+      if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
+      localStorage.setItem('xmum_onboarding_dismissed', '1');
+      openModal(el.syncModal);
     });
+    el.closeSyncModalBtn.addEventListener('click', () => closeModal(el.syncModal));
+    el.syncModal.addEventListener('click', (e) => {
+      if (e.target === el.syncModal) closeModal(el.syncModal);
+    });
+
+    if (el.closeOnboardingPopoverBtn) {
+      el.closeOnboardingPopoverBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
+        localStorage.setItem('xmum_onboarding_dismissed', '1');
+      });
+    }
+
+    if (el.onboardingStartSyncBtn) {
+      el.onboardingStartSyncBtn.addEventListener('click', () => {
+        if (el.syncOnboardingPopover) el.syncOnboardingPopover.classList.remove('show');
+        localStorage.setItem('xmum_onboarding_dismissed', '1');
+        openModal(el.syncModal);
+      });
+    }
+
+    if (el.emptyCardSyncBtn) {
+      el.emptyCardSyncBtn.addEventListener('click', () => {
+        openModal(el.syncModal);
+      });
+    }
 
     // Modal internal tabs
     document.querySelectorAll('.modal-tab').forEach(tab => {
