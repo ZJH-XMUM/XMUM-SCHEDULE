@@ -237,17 +237,28 @@
   function applyTheme(theme) {
     state.theme = theme;
     localStorage.setItem('xmum_theme', theme);
+    const docEl = document.documentElement;
     if (theme === 'light') {
+      docEl.classList.remove('theme-dark');
+      docEl.classList.add('theme-light');
+      docEl.style.colorScheme = 'light';
+      docEl.style.backgroundColor = '#f0f4f8';
       el.body.classList.remove('theme-dark');
       el.body.classList.add('theme-light');
-      el.themeToggleBtn.querySelector('.theme-icon').textContent = '☀️';
+      el.body.style.backgroundColor = '#f0f4f8';
+      if (el.themeToggleBtn) el.themeToggleBtn.querySelector('.theme-icon').textContent = '☀️';
     } else {
+      docEl.classList.remove('theme-light');
+      docEl.classList.add('theme-dark');
+      docEl.style.colorScheme = 'dark';
+      docEl.style.backgroundColor = '#0b1120';
       el.body.classList.remove('theme-light');
       el.body.classList.add('theme-dark');
-      el.themeToggleBtn.querySelector('.theme-icon').textContent = '🌙';
+      el.body.style.backgroundColor = '#0b1120';
+      if (el.themeToggleBtn) el.themeToggleBtn.querySelector('.theme-icon').textContent = '🌙';
     }
     const metaTheme = document.getElementById('metaThemeColor');
-    if (metaTheme) metaTheme.content = (theme === 'light') ? '#f8fafc' : '#0f172a';
+    if (metaTheme) metaTheme.content = (theme === 'light') ? '#f0f4f8' : '#0b1120';
   }
 
   // 4. Academic Calendar Helpers
@@ -1596,18 +1607,22 @@
     // Forms & Import Actions
     el.acLoginForm.addEventListener('submit', handleAcLogin);
     el.parseHtmlBtn.addEventListener('click', handleHtmlParse);
-    el.loadDemoBtn.addEventListener('click', () => {
-      state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-      saveSchedule();
-      el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
-      el.syncModal.classList.remove('open');
-      showToast('已载入通用演示课表');
-      renderView();
-      updateNextClassCard();
-    });
+    if (el.loadDemoBtn) {
+      el.loadDemoBtn.addEventListener('click', () => {
+        state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        saveSchedule();
+        el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
+        el.syncModal.classList.remove('open');
+        showToast('已载入通用演示课表');
+        renderView();
+        updateNextClassCard();
+      });
+    }
 
     // ICS Export Button
-    el.exportIcsBtn.addEventListener('click', exportScheduleToIcs);
+    if (el.exportIcsBtn) {
+      el.exportIcsBtn.addEventListener('click', exportScheduleToIcs);
+    }
 
     // Detail Modal Close
     el.closeDetailModalBtn.addEventListener('click', closeCourseDetail);

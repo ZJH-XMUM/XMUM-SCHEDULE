@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="theme-dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -10,7 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="XMUM课表">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#0f172a" id="metaThemeColor">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f0f4f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1120" id="metaThemeColor">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -44,9 +47,6 @@
           <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
             <span class="btn-badge-dot"></span>
-          </button>
-          <button class="btn-icon" id="exportIcsBtn" title="导出日历 (.ics)" aria-label="导出日历">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           </button>
           <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
             <span class="theme-icon">🌙</span>
@@ -194,10 +194,6 @@
         <span class="nav-icon">🗓️</span>
         <span class="nav-label">全景校历</span>
       </button>
-      <button class="nav-item" id="navSyncModal">
-        <span class="nav-icon">🔄</span>
-        <span class="nav-label">AC同步</span>
-      </button>
     </nav>
 
     <!-- Modal: AC Sync & Import -->
@@ -214,7 +210,6 @@
         <div class="modal-tabs">
           <button class="modal-tab active" data-target="tabAutoLogin">一键账号同步 (推荐)</button>
           <button class="modal-tab" data-target="tabHtmlImport">HTML 源码导入</button>
-          <button class="modal-tab" data-target="tabSampleDemo">演示数据</button>
         </div>
 
         <div class="modal-body">
@@ -256,18 +251,6 @@
             </div>
             <button class="btn-primary full-width" id="parseHtmlBtn">
               解析并导入课表
-            </button>
-          </div>
-
-          <!-- Tab 3: Demo Data -->
-          <div class="modal-tab-pane" id="tabSampleDemo">
-            <p class="modal-tip">体验课表功能与双周/校历联动效果：</p>
-            <div class="demo-card-preview">
-              <div class="preview-title">通用示例 • 2026/09 学期课表</div>
-              <div class="preview-courses">SWE101 (Computing) | MAT101 (Calculus)</div>
-            </div>
-            <button class="btn-secondary full-width" id="loadDemoBtn">
-              载入通用演示课表
             </button>
           </div>
         </div>
