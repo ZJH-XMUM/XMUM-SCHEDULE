@@ -1,13 +1,17 @@
-from http.server import BaseHTTPRequestHandler
+import os
 import json
 import re
 import urllib.parse
+import mimetypes
+from http.server import BaseHTTPRequestHandler
 
 try:
     import requests
     from bs4 import BeautifulSoup
 except ImportError:
     pass
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TIME_SLOTS = [
     {"slot": 1, "time": "8.00am–9.00am", "start": "08:00", "end": "09:00"},
@@ -200,19 +204,32 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
+        parsed_path = urllib.parse.urlparse(self.path).path
         
-        try:
-            data = json.loads(post_data.decode('utf-8'))
-            username = data.get('username', '').strip()
-            password = data.get('password', '').strip()
-            semester = data.get('semester', '2026/09')
-            
-            if not username or not password:
-                res = {"success": False, "error": "请输入学号和密码"}
-            else:
-                res = fetch_from_xmum_ac(username, password, semester)
-        except Exception as e:
-            res = {"success": False, "error": f"请求解析异常: {str(e)}"}
+        if parsed_path.endswith('/sync'):
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                username = data.get('username', '').strip()
+                password = data.get('password', '').strip()
+                semester = data.get('semester', '2026/09')
+                
+                if not username or not password:
+                    res = {"success": False, "error": "请输入学号和密码"}
+                else:
+                    res = fetch_from_xmum_ac(username, password, semester)
+            except Exception as e:
+                res = {"success": False, "error": f"请求解析异常: {str(e)}"}
+
+        elif parsed_path.endswith('/parse_html'):
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                html_code = data.get('html', '')
+                res = parse_timetable_html(html_code)
+                res["success"] = True
+            except Exception as e:
+                res = {"success": False, "error": f"解析失败: {str(e)}"}
+        else:
+            res = {"success": False, "error": "API Route Not Found"}
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -220,7 +237,51 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
 
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        parsed_path = urllib.parse.urlparse(self.path).path
+        
+        # 1. API Health Check
+        if parsed_path == '/api' or parsed_path == '/api/':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "XMUM API online"}).encode('utf-8'))
+            return
+
+        # 2. Serve Static Frontend Files
+        rel_path = parsed_path.lstrip('/')
+        if not rel_path or rel_path == '/':
+            rel_path = 'index.html'
+
+        file_path = os.path.join(ROOT_DIR, rel_path)
+        
+        # Fallback to index.html if file doesn't exist
+        if not os.path.exists(file_path) or os.path.isdir(file_path):
+            file_path = os.path.join(ROOT_DIR, 'index.html')
+
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if not mime_type:
+                if file_path.endswith('.js'):
+                    mime_type = 'application/javascript'
+                elif file_path.endswith('.css'):
+                    mime_type = 'text/css'
+                elif file_path.endswith('.html'):
+                    mime_type = 'text/html; charset=utf-8'
+                elif file_path.endswith('.json'):
+                    mime_type = 'application/json'
+                else:
+                    mime_type = 'application/octet-stream'
+
+            self.send_response(200)
+            self.send_header('Content-Type', mime_type)
+            if mime_type.startswith('text/html'):
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            else:
+                self.send_header('Cache-Control', 'public, max-age=3600')
+            self.end_headers()
+            with open(file_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+
+        self.send_response(404)
         self.end_headers()
-        self.wfile.write(json.dumps({"status": "AC Sync API online"}).encode('utf-8'))
