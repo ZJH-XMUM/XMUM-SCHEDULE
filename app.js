@@ -1645,9 +1645,11 @@
     });
 
     // Add Course placeholder
-    el.addCustomCourseBtn.addEventListener('click', () => {
-      showToast('可点击具体课程进行查看与操作');
-    });
+    if (el.addCustomCourseBtn) {
+      el.addCustomCourseBtn.addEventListener('click', () => {
+        showToast('可点击具体课程进行查看与操作');
+      });
+    }
 
     // Sync Modal open/close
     el.syncModalBtn.addEventListener('click', () => openModal(el.syncModal));

@@ -111,8 +111,6 @@ body.theme-light {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   background: var(--bg-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border-left: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
@@ -1102,20 +1100,26 @@ body.theme-light .sem-detail-item {
    Bottom Navigation Bar
    ======================================================== */
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 680px;
-  background: var(--bg-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 100% !important;
+  max-width: 680px !important;
+  background: rgba(15, 23, 42, 0.94) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   border-top: 1px solid var(--border-color);
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: space-around;
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-  z-index: 100;
+  z-index: 1000 !important;
+}
+
+body.theme-light .bottom-nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .nav-item {
@@ -2228,7 +2232,7 @@ body.theme-light .reschedule-time-preview .preview-value {
   .modal-card {
     max-height: 85vh;
     max-height: 85dvh;
-    margin-bottom: env(safe-area-inset-bottom, 0px);
+    margin: auto !important;
     border-radius: var(--radius-lg);
   }
 }

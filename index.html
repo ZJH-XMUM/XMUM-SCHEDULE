@@ -120,7 +120,6 @@
           <div class="grid-actions">
             <button class="btn-pill" id="todayJumpBtn">回到今天</button>
             <button class="btn-pill secondary" id="toggleDaysBtn">📅 完整7天</button>
-            <button class="btn-pill secondary" id="addCustomCourseBtn">+ 记事</button>
           </div>
         </div>
 
@@ -179,9 +178,10 @@
         </div>
       </section>
     </main>
+  </div><!-- /app-container -->
 
-    <!-- Bottom Navigation Bar (Mobile Thumb Zone) -->
-    <nav class="bottom-nav">
+  <!-- Bottom Navigation Bar (Mobile Thumb Zone) -->
+  <nav class="bottom-nav" id="bottomNav">
       <button class="nav-item active" data-view="dailyAgendaView" id="navDailyAgenda">
         <span class="nav-icon">📅</span>
         <span class="nav-label">今日看板</span>
@@ -476,7 +476,6 @@
 
     <!-- Toast Notification -->
     <div class="toast-message" id="toastMessage"></div>
-  </div>
 
   <!-- Scripts -->
   <script src="data/academic_calendar.js"></script>
