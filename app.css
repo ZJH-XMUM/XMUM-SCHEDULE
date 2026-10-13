@@ -1300,6 +1300,77 @@ body.theme-light .grid-time-slot {
   transform: translateX(2px);
 }
 
+/* Real-time course status indicators in daily agenda */
+.daily-course-card.is-ongoing {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--bg-card) 100%) !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+  position: relative;
+}
+
+.daily-course-card.is-ongoing::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-emerald);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.daily-course-card.is-next-upcoming {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, var(--bg-card) 100%) !important;
+  position: relative;
+}
+
+.daily-course-card.is-next-upcoming::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #3b82f6;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.daily-course-card.is-finished {
+  opacity: 0.58;
+  filter: grayscale(20%);
+}
+
+.course-status-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.course-status-pill.ongoing {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.course-status-pill.upcoming {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.course-status-pill.finished {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
 .course-time-col {
   display: flex;
   flex-direction: column;

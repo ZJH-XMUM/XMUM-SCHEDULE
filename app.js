@@ -868,6 +868,23 @@
     state.selectedDay = dayIndex;
   }
 
+  function parseCourseTimeMinutes(course) {
+    if (course.startTime && course.endTime) {
+      const [sh, sm] = course.startTime.split(':').map(Number);
+      const [eh, em] = course.endTime.split(':').map(Number);
+      return {
+        startMin: (sh || 0) * 60 + (sm || 0),
+        endMin: (eh || 0) * 60 + (em || 0)
+      };
+    }
+    const startHour = 7 + (course.startSlot || 1);
+    const endHour = startHour + (course.slotSpan || 1);
+    return {
+      startMin: startHour * 60,
+      endMin: endHour * 60
+    };
+  }
+
   function updateSemesterInfo() {
     updateTodayBanner();
   }
@@ -888,35 +905,141 @@
       el.termStatusBadge.className = 'status-pill active';
       el.termStatusBadge.onclick = null;
 
-      if (el.nextClassLabel) {
-        el.nextClassLabel.textContent = '⏰ 今日课程 / 下一节课';
-      }
+      // Realtime check for today based on current hour and minute
+      const now = new Date();
+      const currentMin = now.getHours() * 60 + now.getMinutes();
 
       // Today courses
       const todayCourses = (state.schedule?.courses || [])
-        .filter(c => c.weeks && c.weeks.includes(state.realTodayWeek))
-        .map(c => getEffectiveCourseForWeek(c, state.realTodayWeek))
-        .filter(c => c.dayOfWeek === state.realTodayDay)
-        .sort((a, b) => a.startSlot - b.startSlot);
+        .filter(c => {
+          if (!c.weeks) return true;
+          const wList = Array.isArray(c.weeks) ? c.weeks.map(Number) : [];
+          return wList.includes(Number(state.realTodayWeek));
+        })
+        .map(c => getEffectiveCourseForWeek(c, Number(state.realTodayWeek)))
+        .filter(c => Number(c.dayOfWeek) === Number(state.realTodayDay))
+        .sort((a, b) => {
+          const aMin = parseCourseTimeMinutes(a).startMin;
+          const bMin = parseCourseTimeMinutes(b).startMin;
+          return aMin !== bMin ? aMin - bMin : (a.startSlot || 0) - (b.startSlot || 0);
+        });
 
       if (todayCourses.length > 0) {
-        const nextCourse = todayCourses[0];
-        let tagsHtml = `
-          <span class="meta-tag venue">📍 ${nextCourse.location}</span>
-          <span class="meta-tag time">🕒 ${nextCourse.startTime} - ${nextCourse.endTime}</span>
-          <span class="meta-tag lecturer">👤 ${nextCourse.instructor}</span>
-        `;
-        if (nextCourse.isRescheduled) {
-          tagsHtml += `<span class="meta-tag" style="background:#f97316; color:#fff;">🔄 已调课</span>`;
+        let ongoingCourse = null;
+        let nextCourse = null;
+
+        for (const c of todayCourses) {
+          const { startMin, endMin } = parseCourseTimeMinutes(c);
+          if (startMin <= currentMin && currentMin < endMin) {
+            if (!ongoingCourse) ongoingCourse = c;
+          } else if (currentMin < startMin && !nextCourse) {
+            nextCourse = c;
+          }
         }
-        if (nextCourse.notes) {
-          tagsHtml += `<span class="meta-tag" style="background:#10b981; color:#fff;">📝 ${nextCourse.notes}</span>`;
+
+        if (ongoingCourse) {
+          // A course is currently ongoing
+          const { endMin } = parseCourseTimeMinutes(ongoingCourse);
+          const remainMin = Math.max(1, endMin - currentMin);
+          if (el.nextClassLabel) {
+            el.nextClassLabel.innerHTML = `🔴 正在上课中 • 距下课还有 ${remainMin} 分钟`;
+          }
+
+          let tagsHtml = `
+            <span class="meta-tag venue">📍 ${ongoingCourse.location}</span>
+            <span class="meta-tag time">🕒 ${ongoingCourse.startTime} - ${ongoingCourse.endTime}</span>
+            <span class="meta-tag lecturer">👤 ${ongoingCourse.instructor}</span>
+            <span class="meta-tag" style="background:#10b981; color:#fff;">正在进行</span>
+          `;
+          if (ongoingCourse.isRescheduled) {
+            tagsHtml += `<span class="meta-tag" style="background:#f97316; color:#fff;">🔄 已调课</span>`;
+          }
+          if (ongoingCourse.notes) {
+            tagsHtml += `<span class="meta-tag" style="background:#3b82f6; color:#fff;">📝 ${ongoingCourse.notes}</span>`;
+          }
+          if (nextCourse) {
+            tagsHtml += `<span class="meta-tag" style="background:rgba(59,130,246,0.2); color:#60a5fa;">👉 下一节课: ${nextCourse.startTime} ${nextCourse.code} (${nextCourse.location})</span>`;
+          }
+
+          el.nextClassContent.innerHTML = `
+            <div class="next-class-name">${ongoingCourse.code} ${ongoingCourse.name}</div>
+            <div class="next-class-meta">${tagsHtml}</div>
+          `;
+        } else if (nextCourse) {
+          // An upcoming course later today
+          const { startMin } = parseCourseTimeMinutes(nextCourse);
+          const diffMin = startMin - currentMin;
+          let timeCountText = '';
+          if (diffMin <= 60) {
+            timeCountText = `距上课还有 ${diffMin} 分钟`;
+          } else {
+            const diffH = Math.floor(diffMin / 60);
+            const remM = diffMin % 60;
+            timeCountText = `距上课约 ${diffH}小时${remM > 0 ? remM + '分' : ''}`;
+          }
+
+          if (el.nextClassLabel) {
+            el.nextClassLabel.innerHTML = `⏰ 下一节课 • ${timeCountText}`;
+          }
+
+          let tagsHtml = `
+            <span class="meta-tag venue">📍 ${nextCourse.location}</span>
+            <span class="meta-tag time">🕒 ${nextCourse.startTime} - ${nextCourse.endTime}</span>
+            <span class="meta-tag lecturer">👤 ${nextCourse.instructor}</span>
+          `;
+          if (nextCourse.isRescheduled) {
+            tagsHtml += `<span class="meta-tag" style="background:#f97316; color:#fff;">🔄 已调课</span>`;
+          }
+          if (nextCourse.notes) {
+            tagsHtml += `<span class="meta-tag" style="background:#10b981; color:#fff;">📝 ${nextCourse.notes}</span>`;
+          }
+
+          el.nextClassContent.innerHTML = `
+            <div class="next-class-name">${nextCourse.code} ${nextCourse.name}</div>
+            <div class="next-class-meta">${tagsHtml}</div>
+          `;
+        } else {
+          // All today's courses have finished!
+          if (el.nextClassLabel) {
+            el.nextClassLabel.innerHTML = '🎉 今日课程已全部结束';
+          }
+
+          // Look ahead to tomorrow's first course
+          const tomorrowDay = (state.realTodayDay % 7) + 1;
+          const tomorrowWeek = (tomorrowDay === 1) ? state.realTodayWeek + 1 : state.realTodayWeek;
+          const tomorrowCourses = (state.schedule?.courses || [])
+            .filter(c => {
+              if (!c.weeks) return true;
+              const wList = Array.isArray(c.weeks) ? c.weeks.map(Number) : [];
+              return wList.includes(tomorrowWeek);
+            })
+            .map(c => getEffectiveCourseForWeek(c, tomorrowWeek))
+            .filter(c => Number(c.dayOfWeek) === tomorrowDay)
+            .sort((a, b) => {
+              const aMin = parseCourseTimeMinutes(a).startMin;
+              const bMin = parseCourseTimeMinutes(b).startMin;
+              return aMin !== bMin ? aMin - bMin : (a.startSlot || 0) - (b.startSlot || 0);
+            });
+
+          let tomorrowHint = '';
+          if (tomorrowCourses.length > 0) {
+            const tomFirst = tomorrowCourses[0];
+            tomorrowHint = `✨ 明日首节课: ${tomFirst.startTime} ${tomFirst.code} ${tomFirst.name} (📍 ${tomFirst.location})`;
+          } else {
+            tomorrowHint = `明日（${DAY_ZH[tomorrowDay - 1]}）暂无排课安排，好好放松！`;
+          }
+
+          el.nextClassContent.innerHTML = `
+            <div class="next-class-name">今日 ${todayCourses.length} 门课程已全部完成！好好休息～ 🎉</div>
+            <div class="next-class-meta">
+              <span class="meta-tag">${tomorrowHint}</span>
+            </div>
+          `;
         }
-        el.nextClassContent.innerHTML = `
-          <div class="next-class-name">${nextCourse.code} ${nextCourse.name}</div>
-          <div class="next-class-meta">${tagsHtml}</div>
-        `;
       } else {
+        if (el.nextClassLabel) {
+          el.nextClassLabel.textContent = '⏰ 今日课程安排';
+        }
         el.nextClassContent.innerHTML = `
           <div class="next-class-name">今日（${DAY_ZH[state.realTodayDay - 1]}）暂无排课安排 🎉</div>
           <div class="next-class-meta">
@@ -1314,7 +1437,11 @@
       })
       .map(c => getEffectiveCourseForWeek(c, currentWeekNum))
       .filter(c => Number(c.dayOfWeek) === currentDayNum)
-      .sort((a, b) => a.startSlot - b.startSlot);
+      .sort((a, b) => {
+        const aMin = parseCourseTimeMinutes(a).startMin;
+        const bMin = parseCourseTimeMinutes(b).startMin;
+        return aMin !== bMin ? aMin - bMin : (a.startSlot || 0) - (b.startSlot || 0);
+      });
 
     // Update active tab in dayTabs
     if (el.dayTabsContainer) {
@@ -1357,7 +1484,34 @@
 
     todayCourses.forEach(c => {
       const card = document.createElement('div');
-      card.className = 'daily-course-card';
+      
+      let statusClass = '';
+      let statusBadge = '';
+
+      if (isRealToday) {
+        const now = new Date();
+        const currentMin = now.getHours() * 60 + now.getMinutes();
+        const { startMin, endMin } = parseCourseTimeMinutes(c);
+
+        if (startMin <= currentMin && currentMin < endMin) {
+          statusClass = 'is-ongoing';
+          statusBadge = '<span class="course-status-pill ongoing">🔴 上课中</span>';
+        } else if (currentMin >= endMin) {
+          statusClass = 'is-finished';
+          statusBadge = '<span class="course-status-pill finished">✓ 已结课</span>';
+        } else if (currentMin < startMin) {
+          const upcomingOnes = todayCourses.filter(item => {
+            const tm = parseCourseTimeMinutes(item);
+            return tm.startMin > currentMin;
+          });
+          if (upcomingOnes.length > 0 && upcomingOnes[0].id === c.id) {
+            statusClass = 'is-next-upcoming';
+            statusBadge = '<span class="course-status-pill upcoming">⏰ 下一节</span>';
+          }
+        }
+      }
+
+      card.className = `daily-course-card ${statusClass}`.trim();
       
       let badgesLine = '';
       if (c.isRescheduled) {
@@ -1373,7 +1527,10 @@
           <span class="course-time-end">${c.endTime}</span>
         </div>
         <div class="course-info-col">
-          <span class="course-code-badge" style="background:${c.colorTag || '#3b82f6'}">${c.code}</span>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span class="course-code-badge" style="background:${c.colorTag || '#3b82f6'}; margin-bottom:0;">${c.code}</span>
+            ${statusBadge}
+          </div>
           <div class="course-name-lg">${c.name}</div>
           <div class="course-meta-row">
             <span>📍 ${c.location}</span>
@@ -2532,6 +2689,30 @@
         showToast('已恢复为初始课程时间与地点！');
       });
     }
+
+    // 14. Real-time dynamic updates (Every 30 seconds & on tab focus/visibility change)
+    setInterval(() => {
+      updateTodayBanner();
+      if (state.activeView === 'dailyAgendaView') {
+        renderDailyAgenda();
+      }
+    }, 30000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        updateTodayBanner();
+        if (state.activeView === 'dailyAgendaView') {
+          renderDailyAgenda();
+        }
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      updateTodayBanner();
+      if (state.activeView === 'dailyAgendaView') {
+        renderDailyAgenda();
+      }
+    });
   }
 
   // Run on DOM Ready
