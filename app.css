@@ -505,6 +505,465 @@ body.theme-light .meta-tag {
   color: var(--text-muted);
 }
 
+/* --------------------------------------------------------
+   Banner Urgent DDL Alert Pill (最显眼处)
+   -------------------------------------------------------- */
+.banner-urgent-ddl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(245, 158, 11, 0.14) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.08);
+}
+
+.banner-urgent-ddl.hidden {
+  display: none !important;
+}
+
+.banner-urgent-ddl:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.18);
+}
+
+body.theme-light .banner-urgent-ddl {
+  background: linear-gradient(135deg, rgba(254, 226, 226, 0.85) 0%, rgba(254, 243, 199, 0.85) 100%);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.urgent-ddl-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.urgent-ddl-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.urgent-ddl-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.urgent-ddl-tag {
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #f43f5e;
+}
+
+.urgent-ddl-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.urgent-ddl-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.urgent-ddl-time {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.2);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+body.theme-light .urgent-ddl-time {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.urgent-ddl-arrow {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ========================================================
+   Moodle Deadlines & Tasks Card (课程下方)
+   ======================================================== */
+.moodle-ddl-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-top: 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.moodle-ddl-card.pulse-highlight {
+  animation: cardHighlightPulse 1.4s ease-out;
+}
+
+@keyframes cardHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+    border-color: #f59e0b;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.2);
+    border-color: #fbbf24;
+  }
+  100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(245, 158, 11, 0.28);
+  }
+}
+
+body.theme-light .moodle-ddl-card {
+  background: #ffffff;
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.moodle-ddl-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #f59e0b, #ec4899);
+}
+
+.ddl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ddl-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ddl-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.ddl-title {
+  font-size: 0.96rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.ddl-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ddl-sync-quick-btn {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.ddl-sync-quick-btn:hover {
+  background: rgba(59, 130, 246, 0.24);
+  transform: translateY(-1px);
+}
+
+.ddl-toggle-collapse-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast);
+}
+
+.ddl-toggle-collapse-btn:hover {
+  color: var(--text-main);
+}
+
+.ddl-content-body.collapsed {
+  display: none;
+}
+
+/* Filter Bar */
+.ddl-filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.ddl-filter-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+body.theme-light .ddl-filter-chip {
+  background: #f1f5f9;
+}
+
+.ddl-filter-chip.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* Deadline List & Items */
+.ddl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ddl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  gap: 10px;
+}
+
+body.theme-light .ddl-item {
+  background: #f8fafc;
+}
+
+.ddl-item:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.ddl-item.completed {
+  opacity: 0.55;
+}
+
+.ddl-item.completed .ddl-item-title {
+  text-decoration: line-through;
+}
+
+.ddl-item.urgent {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.ddl-countdown-col {
+  flex-shrink: 0;
+  min-width: 68px;
+  text-align: center;
+}
+
+.ddl-countdown-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ddl-countdown-pill.urgent {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.ddl-countdown-pill.warning {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.ddl-countdown-pill.normal {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.ddl-countdown-pill.overdue {
+  background: rgba(153, 27, 27, 0.3);
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+}
+
+.ddl-countdown-pill.done {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ddl-info-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.ddl-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.ddl-course-badge {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #fff;
+  background: #3b82f6;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.ddl-type-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ddl-item-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.ddl-meta-row {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ddl-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-ddl-check {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.btn-ddl-check:hover {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.btn-ddl-open {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #60a5fa;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all var(--transition-fast);
+}
+
+.btn-ddl-open:hover {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+.ddl-empty-box {
+  padding: 16px 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.ddl-empty-box .empty-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+
+.ddl-empty-box .empty-txt {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.ddl-empty-box .empty-sub {
+  font-size: 0.72rem;
+  margin-bottom: 8px;
+}
+
 /* ========================================================
    View Switcher & Panels
    ======================================================== */

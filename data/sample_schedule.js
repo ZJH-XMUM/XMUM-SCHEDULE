@@ -46,6 +46,56 @@ const DEFAULT_SCHEDULE = {
   rescheduledCourses: {}
 };
 
+const DEFAULT_DEADLINES = [
+  {
+    id: "moodle-demo-1",
+    title: "Assignment 1: System Architecture & UML Design",
+    courseCode: "SWE305",
+    courseName: "Object-Oriented Analysis and Design",
+    dueDate: "2026-10-15",
+    dueTime: "23:59",
+    dueTimestamp: 1792089540,
+    type: "assign",
+    url: "https://l.xmu.edu.my/my/",
+    overdue: false,
+    daysRemaining: 2,
+    completed: false
+  },
+  {
+    id: "moodle-demo-2",
+    title: "Quiz 2: Operating System Virtual Memory & Paging",
+    courseCode: "CST310",
+    courseName: "Operating Systems",
+    dueDate: "2026-10-18",
+    dueTime: "20:00",
+    dueTimestamp: 1792334400,
+    type: "quiz",
+    url: "https://l.xmu.edu.my/my/",
+    overdue: false,
+    daysRemaining: 5,
+    completed: false
+  },
+  {
+    id: "moodle-demo-3",
+    title: "Mini-Project Proposal & Milestone 1 Submission",
+    courseCode: "SWE305",
+    courseName: "Object-Oriented Analysis and Design",
+    dueDate: "2026-10-25",
+    dueTime: "23:59",
+    dueTimestamp: 1792953540,
+    type: "assign",
+    url: "https://l.xmu.edu.my/my/",
+    overdue: false,
+    daysRemaining: 12,
+    completed: false
+  }
+];
+
+if (typeof window !== 'undefined') {
+  window.DEFAULT_SCHEDULE = DEFAULT_SCHEDULE;
+  window.DEFAULT_DEADLINES = DEFAULT_DEADLINES;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DEFAULT_SCHEDULE;
+  module.exports = { DEFAULT_SCHEDULE, DEFAULT_DEADLINES };
 }

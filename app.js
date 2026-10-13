@@ -17,6 +17,9 @@
     weekGridDays: 5,
     activeCalendarYear: '2026',
     schedule: null,
+    deadlines: [],
+    activeDdlFilter: 'all',
+    ddlCollapsed: localStorage.getItem('xmum_ddl_collapsed') === 'true',
     selectedCourse: null,
     theme: localStorage.getItem('xmum_theme') || 'dark'
   };
@@ -98,6 +101,35 @@
     recycleListContainer: document.getElementById('recycleListContainer'),
     clearRecycleBinBtn: document.getElementById('clearRecycleBinBtn'),
     toggleDaysBtn: document.getElementById('toggleDaysBtn'),
+    bannerUrgentDdl: document.getElementById('bannerUrgentDdl'),
+    bannerUrgentDdlTitle: document.getElementById('bannerUrgentDdlTitle'),
+    bannerUrgentDdlTime: document.getElementById('bannerUrgentDdlTime'),
+    moodleDdlCard: document.getElementById('moodleDdlCard'),
+    moodleDdlBody: document.getElementById('moodleDdlBody'),
+    moodleDdlList: document.getElementById('moodleDdlList'),
+    quickSyncMoodleBtn: document.getElementById('quickSyncMoodleBtn'),
+    toggleDdlCollapseBtn: document.getElementById('toggleDdlCollapseBtn'),
+    ddlCollapseIcon: document.getElementById('ddlCollapseIcon'),
+    ddlCountAll: document.getElementById('ddlCountAll'),
+    ddlCountUrgent: document.getElementById('ddlCountUrgent'),
+    ddlCountDone: document.getElementById('ddlCountDone'),
+    unifiedLoginForm: document.getElementById('unifiedLoginForm'),
+    unifiedUsername: document.getElementById('unifiedUsername'),
+    unifiedPassword: document.getElementById('unifiedPassword'),
+    unifiedSemester: document.getElementById('unifiedSemester'),
+    unifiedSyncAcCheck: document.getElementById('unifiedSyncAcCheck'),
+    unifiedSyncMoodleCheck: document.getElementById('unifiedSyncMoodleCheck'),
+    startUnifiedSyncBtn: document.getElementById('startUnifiedSyncBtn'),
+    unifiedStatusMsg: document.getElementById('unifiedStatusMsg'),
+    loadUnifiedDemoBtn: document.getElementById('loadUnifiedDemoBtn'),
+    clearAllUserDataBtn: document.getElementById('clearAllUserDataBtn'),
+    moodleLoginForm: document.getElementById('moodleLoginForm'),
+    moodleUsername: document.getElementById('moodleUsername'),
+    moodlePassword: document.getElementById('moodlePassword'),
+    startMoodleSyncBtn: document.getElementById('startMoodleSyncBtn'),
+    moodleStatusMsg: document.getElementById('moodleStatusMsg'),
+    loadDemoDeadlinesBtn: document.getElementById('loadDemoDeadlinesBtn'),
+    clearDeadlinesBtn: document.getElementById('clearDeadlinesBtn'),
     navItems: document.querySelectorAll('.bottom-nav .nav-item')
   };
 
@@ -122,6 +154,7 @@
   function init() {
     try {
       loadSavedSchedule();
+      loadSavedDeadlines();
       applyTheme(state.theme);
       initRealToday();
       setupEventListeners();
@@ -131,6 +164,7 @@
       switchView(state.activeView);
       renderView();
       updateTodayBanner();
+      renderDeadlines();
       renderCalendarMilestones();
       renderAcademicCalendar();
       updateRecycleCountBadge();
@@ -263,6 +297,465 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state.schedule)
       }).catch(err => console.warn('Failed to persist schedule to server:', err));
+    }
+  }
+
+  // 2b. Moodle Deadlines & Tasks Management
+  function loadSavedDeadlines() {
+    try {
+      const stored = localStorage.getItem('xmum_moodle_deadlines');
+      if (stored) {
+        state.deadlines = JSON.parse(stored);
+      } else if (typeof DEFAULT_DEADLINES !== 'undefined' && Array.isArray(DEFAULT_DEADLINES)) {
+        state.deadlines = JSON.parse(JSON.stringify(DEFAULT_DEADLINES));
+      } else {
+        state.deadlines = [];
+      }
+    } catch (e) {
+      console.warn('Could not load deadlines from storage:', e);
+      state.deadlines = [];
+    }
+    syncDeadlinesFromServer();
+  }
+
+  function saveDeadlines() {
+    try {
+      localStorage.setItem('xmum_moodle_deadlines', JSON.stringify(state.deadlines || []));
+      fetch('/api/save_deadlines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.deadlines || [])
+      }).catch(err => console.warn('Failed to persist deadlines to server:', err));
+    } catch (e) {
+      console.warn('Error saving deadlines:', e);
+    }
+  }
+
+  async function syncDeadlinesFromServer() {
+    try {
+      const resp = await fetch('/api/deadlines');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.deadlines) && data.deadlines.length > 0) {
+          if (!state.deadlines || state.deadlines.length === 0 || !localStorage.getItem('xmum_moodle_deadlines')) {
+            state.deadlines = data.deadlines;
+            localStorage.setItem('xmum_moodle_deadlines', JSON.stringify(state.deadlines));
+            renderDeadlines();
+          }
+        }
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+  }
+
+  function toggleDeadlineComplete(id) {
+    if (!state.deadlines) return;
+    const item = state.deadlines.find(d => d.id === id);
+    if (!item) return;
+    item.completed = !item.completed;
+    saveDeadlines();
+    renderDeadlines();
+    showToast(item.completed ? '🎉 恭喜！该作业已标记完成！' : '已重置为待办状态');
+  }
+
+  function renderDeadlines() {
+    if (!el.moodleDdlList) return;
+    
+    // Check collapse state
+    if (el.moodleDdlBody && el.ddlCollapseIcon) {
+      if (state.ddlCollapsed) {
+        el.moodleDdlBody.classList.add('collapsed');
+        el.ddlCollapseIcon.textContent = '▸';
+      } else {
+        el.moodleDdlBody.classList.remove('collapsed');
+        el.ddlCollapseIcon.textContent = '▾';
+      }
+    }
+
+    const allDeadlines = state.deadlines || [];
+    const now = Date.now();
+
+    // Update counts
+    const uncompleted = allDeadlines.filter(d => !d.completed);
+    const urgentItems = uncompleted.filter(d => {
+      if (!d.dueTimestamp) return false;
+      const diffMs = (d.dueTimestamp * 1000) - now;
+      return diffMs <= 3 * 86400 * 1000; // <= 3 days or overdue
+    });
+    const completedItems = allDeadlines.filter(d => d.completed);
+
+    if (el.ddlCountAll) el.ddlCountAll.textContent = uncompleted.length;
+    if (el.ddlCountUrgent) el.ddlCountUrgent.textContent = urgentItems.length;
+    if (el.ddlCountDone) el.ddlCountDone.textContent = completedItems.length;
+
+    // Filter display items
+    let displayItems = [];
+    if (state.activeDdlFilter === 'urgent') {
+      displayItems = urgentItems;
+    } else if (state.activeDdlFilter === 'completed') {
+      displayItems = completedItems;
+    } else {
+      // 'all': uncompleted first, sorted by due time, then completed
+      const sortedUncompleted = [...uncompleted].sort((a, b) => (a.dueTimestamp || 9999999999) - (b.dueTimestamp || 9999999999));
+      displayItems = sortedUncompleted.concat(completedItems);
+    }
+
+    el.moodleDdlList.innerHTML = '';
+
+    if (displayItems.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'ddl-empty-box';
+      if (state.activeDdlFilter === 'completed') {
+        emptyDiv.innerHTML = `
+          <div class="empty-icon">📝</div>
+          <div class="empty-txt">暂无已完成记录</div>
+          <div class="empty-sub">勾选作业即可归档至已完成列表</div>
+        `;
+      } else if (state.activeDdlFilter === 'urgent') {
+        emptyDiv.innerHTML = `
+          <div class="empty-icon">☕️</div>
+          <div class="empty-txt">暂无3天内的紧急作业！</div>
+          <div class="empty-sub">所有待办均时间充裕，继续保持好节奏</div>
+        `;
+      } else {
+        emptyDiv.innerHTML = `
+          <div class="empty-icon">🎉</div>
+          <div class="empty-txt">当前暂无待提交的 Moodle 作业！</div>
+          <div class="empty-sub">若任课教师刚发布新任务，可点击上方【同步 Moodle】获取最新数据</div>
+          <button class="btn-pill-small secondary" id="emptyLoadDemoBtn" style="margin-top: 4px;">🌟 载入作业演示数据</button>
+        `;
+        const emptyBtn = emptyDiv.querySelector('#emptyLoadDemoBtn');
+        if (emptyBtn) {
+          emptyBtn.addEventListener('click', () => {
+            if (typeof DEFAULT_DEADLINES !== 'undefined') {
+              state.deadlines = JSON.parse(JSON.stringify(DEFAULT_DEADLINES));
+              saveDeadlines();
+              renderDeadlines();
+              showToast('已载入作业演示数据');
+            }
+          });
+        }
+      }
+      el.moodleDdlList.appendChild(emptyDiv);
+      return;
+    }
+
+    displayItems.forEach(item => {
+      const row = document.createElement('div');
+      let isUrgent = false;
+      let isOverdue = false;
+      let pillClass = 'normal';
+      let pillText = '待办';
+
+      if (item.completed) {
+        pillClass = 'done';
+        pillText = '已完成';
+      } else if (item.dueTimestamp) {
+        const diffMs = (item.dueTimestamp * 1000) - now;
+        const diffDays = Math.ceil(diffMs / (86400 * 1000));
+        const diffHours = Math.ceil(diffMs / (3600 * 1000));
+
+        if (diffMs < 0) {
+          isOverdue = true;
+          pillClass = 'overdue';
+          pillText = '已逾期';
+        } else if (diffHours <= 24) {
+          isUrgent = true;
+          pillClass = 'urgent';
+          pillText = diffHours <= 1 ? '即将截止' : `剩 ${diffHours}小时`;
+        } else if (diffDays <= 3) {
+          isUrgent = true;
+          pillClass = 'warning';
+          pillText = `剩 ${diffDays}天`;
+        } else {
+          pillClass = 'normal';
+          pillText = `剩 ${diffDays}天`;
+        }
+      }
+
+      row.className = `ddl-item ${item.completed ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}`;
+      
+      const typeLabel = item.type === 'quiz' ? '📝 测验' : '📋 作业';
+      const formattedTime = item.dueTime ? `${item.dueDate} ${item.dueTime}` : (item.dueDate || '近期截止');
+
+      row.innerHTML = `
+        <div class="ddl-countdown-col">
+          <span class="ddl-countdown-pill ${pillClass}">${pillText}</span>
+        </div>
+        <div class="ddl-info-col">
+          <div class="ddl-header-row">
+            <span class="ddl-course-badge">${item.courseCode || 'COURSE'}</span>
+            <span class="ddl-type-tag">${typeLabel}</span>
+          </div>
+          <div class="ddl-item-title" title="${item.title}">${item.title}</div>
+          <div class="ddl-meta-row">
+            <span>🕒 ${formattedTime}</span>
+            ${item.courseName ? `<span style="opacity:0.75;">• ${item.courseName}</span>` : ''}
+          </div>
+        </div>
+        <div class="ddl-actions-col">
+          <button class="btn-ddl-check" title="${item.completed ? '标记为未完成' : '标记已完成'}">
+            ${item.completed ? '↩️' : '✅'}
+          </button>
+          <a href="${item.url || 'https://l.xmu.edu.my/my/'}" target="_blank" rel="noopener noreferrer" class="btn-ddl-open" title="去 Moodle 提交">
+            去提交 ↗
+          </a>
+        </div>
+      `;
+
+      // Event listener for completion toggle
+      const checkBtn = row.querySelector('.btn-ddl-check');
+      if (checkBtn) {
+        checkBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleDeadlineComplete(item.id);
+        });
+      }
+
+      el.moodleDdlList.appendChild(row);
+    });
+
+    updateBannerUrgentDdl();
+  }
+
+  function updateBannerUrgentDdl() {
+    if (!el.bannerUrgentDdl) return;
+    const allDeadlines = state.deadlines || [];
+    const uncompleted = allDeadlines.filter(d => !d.completed);
+
+    if (uncompleted.length === 0) {
+      el.bannerUrgentDdl.classList.add('hidden');
+      return;
+    }
+
+    const now = Date.now();
+    // Sort by due timestamp ascending
+    const sorted = [...uncompleted].sort((a, b) => (a.dueTimestamp || 9999999999) - (b.dueTimestamp || 9999999999));
+    const closest = sorted[0];
+
+    let timeText = '待办';
+    let icon = '⚡️';
+    if (closest.dueTimestamp) {
+      const diffMs = (closest.dueTimestamp * 1000) - now;
+      if (diffMs < 0) {
+        timeText = '已逾期';
+        icon = '⚠️';
+      } else {
+        const diffHours = Math.ceil(diffMs / 3600000);
+        const diffDays = Math.ceil(diffMs / 86400000);
+        if (diffHours <= 24) {
+          timeText = diffHours <= 1 ? '即将截止' : `剩 ${diffHours}小时`;
+          icon = '🔥';
+        } else if (diffDays <= 3) {
+          timeText = `剩 ${diffDays}天`;
+          icon = '🔥';
+        } else {
+          timeText = `剩 ${diffDays}天`;
+          icon = '⏰';
+        }
+      }
+    }
+
+    const iconEl = el.bannerUrgentDdl.querySelector('.urgent-ddl-icon');
+    if (iconEl) iconEl.textContent = icon;
+    if (el.bannerUrgentDdlTitle) {
+      el.bannerUrgentDdlTitle.textContent = `【${closest.courseCode || '课程'}】${closest.title} (共 ${uncompleted.length} 项)`;
+    }
+    if (el.bannerUrgentDdlTime) {
+      el.bannerUrgentDdlTime.textContent = timeText;
+    }
+    el.bannerUrgentDdl.classList.remove('hidden');
+  }
+
+  async function handleUnifiedLogin(e) {
+    if (e) e.preventDefault();
+    const username = el.unifiedUsername ? el.unifiedUsername.value.trim() : '';
+    const password = el.unifiedPassword ? el.unifiedPassword.value.trim() : '';
+    const semester = el.unifiedSemester ? el.unifiedSemester.value : '2026/09';
+    const syncAc = el.unifiedSyncAcCheck ? el.unifiedSyncAcCheck.checked : true;
+    const syncMoodle = el.unifiedSyncMoodleCheck ? el.unifiedSyncMoodleCheck.checked : true;
+
+    if (!username || !password) {
+      showToast('请输入学号与统一密码');
+      return;
+    }
+    if (!syncAc && !syncMoodle) {
+      showToast('请至少勾选一项同步内容 (课表或 Moodle)');
+      return;
+    }
+
+    if (el.startUnifiedSyncBtn) el.startUnifiedSyncBtn.disabled = true;
+    if (el.unifiedStatusMsg) {
+      el.unifiedStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ 正在连接校园系统并进行全量同步...</span>';
+    }
+
+    try {
+      let fullRes = null;
+      try {
+        const resp = await fetch('/api/full_sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, semester, sync_ac: syncAc, sync_moodle: syncMoodle })
+        });
+        if (resp.ok) fullRes = await resp.json();
+      } catch (err) {
+        console.warn('full_sync error, fallback to sequential', err);
+      }
+
+      let acSuccess = false;
+      let moodleSuccess = false;
+      let acCount = 0;
+      let moodleCount = 0;
+
+      if (fullRes) {
+        if (syncAc && fullRes.ac && fullRes.ac.success && fullRes.ac.courses) {
+          acSuccess = true;
+          acCount = fullRes.ac.courses.length;
+          state.schedule = {
+            studentName: fullRes.ac.studentName || username,
+            studentId: username,
+            semester: semester,
+            lastUpdated: new Date().toISOString(),
+            courses: fullRes.ac.courses
+          };
+          state.studentName = state.schedule.studentName;
+          saveSchedule();
+        }
+        if (syncMoodle && fullRes.moodle && fullRes.moodle.success && fullRes.moodle.deadlines) {
+          moodleSuccess = true;
+          moodleCount = fullRes.moodle.deadlines.length;
+          state.deadlines = fullRes.moodle.deadlines;
+          saveDeadlines();
+        }
+      } else {
+        // Sequential fallback
+        if (syncAc) {
+          if (el.unifiedStatusMsg) {
+            el.unifiedStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ [1/2] 正在连接 AC 教务系统同步课表...</span>';
+          }
+          const acResp = await fetch('/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, semester })
+          });
+          const acData = await acResp.json();
+          if (acData.success && acData.courses) {
+            acSuccess = true;
+            acCount = acData.courses.length;
+            state.schedule = {
+              studentName: acData.studentName || username,
+              studentId: username,
+              semester: semester,
+              lastUpdated: new Date().toISOString(),
+              courses: acData.courses
+            };
+            state.studentName = state.schedule.studentName;
+            saveSchedule();
+          }
+        }
+        if (syncMoodle) {
+          if (el.unifiedStatusMsg) {
+            el.unifiedStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ [2/2] 正在连接 Moodle 学习网同步作业...</span>';
+          }
+          const mResp = await fetch('/api/moodle_sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const mData = await mResp.json();
+          if (mData.success && mData.deadlines) {
+            moodleSuccess = true;
+            moodleCount = mData.deadlines.length;
+            state.deadlines = mData.deadlines;
+            saveDeadlines();
+          }
+        }
+      }
+
+      // Re-render UI
+      if (el.studentNameDisplay) el.studentNameDisplay.textContent = `Hi, ${state.studentName}`;
+      renderView();
+      renderDeadlines();
+      updateTodayBanner();
+
+      const overallSuccess = (syncAc ? acSuccess : true) && (syncMoodle ? moodleSuccess : true);
+      if (overallSuccess || acSuccess || moodleSuccess) {
+        const msg = `🎉 同步成功！已导入 ${acCount} 门课程、${moodleCount} 项 Moodle 待办！`;
+        if (el.unifiedStatusMsg) {
+          el.unifiedStatusMsg.innerHTML = `<span style="color:#10b981;">${msg}</span>`;
+        }
+        showToast('一键全量同步成功！');
+        setTimeout(() => {
+          closeModal(el.syncModal);
+          if (el.unifiedStatusMsg) el.unifiedStatusMsg.innerHTML = '';
+        }, 1400);
+      } else {
+        const errMsg = fullRes?.error || '同步失败，请检查学号与统一密码是否正确';
+        if (el.unifiedStatusMsg) {
+          el.unifiedStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${errMsg}</span>`;
+        }
+        showToast(`同步失败: ${errMsg}`);
+      }
+    } catch (err) {
+      if (el.unifiedStatusMsg) {
+        el.unifiedStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ 请求异常: ${err.message}</span>`;
+      }
+      showToast('请求超时，请检查网络连接');
+    } finally {
+      if (el.startUnifiedSyncBtn) el.startUnifiedSyncBtn.disabled = false;
+    }
+  }
+
+  async function handleMoodleLogin(e) {
+    if (e) e.preventDefault();
+    const username = el.moodleUsername ? el.moodleUsername.value.trim() : '';
+    const password = el.moodlePassword ? el.moodlePassword.value.trim() : '';
+
+    if (!username || !password) {
+      showToast('请输入 Moodle 学号和密码');
+      return;
+    }
+
+    if (el.moodleStatusMsg) {
+      el.moodleStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ 正在连接 XMUM Moodle 学习平台...</span>';
+    }
+    if (el.startMoodleSyncBtn) el.startMoodleSyncBtn.disabled = true;
+
+    try {
+      const resp = await fetch('/api/moodle_sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await resp.json();
+      if (data.success) {
+        state.deadlines = data.deadlines || [];
+        saveDeadlines();
+        renderDeadlines();
+
+        if (el.moodleStatusMsg) {
+          el.moodleStatusMsg.innerHTML = `<span style="color:#10b981;">✅ 成功同步 ${data.deadlines.length} 项 Moodle 待办作业！</span>`;
+        }
+        showToast(`🎉 成功同步 ${data.deadlines.length} 项 Moodle 作业与 DDL！`);
+        setTimeout(() => {
+          closeModal(el.syncModal);
+          if (el.moodleStatusMsg) el.moodleStatusMsg.innerHTML = '';
+        }, 1200);
+      } else {
+        if (el.moodleStatusMsg) {
+          el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${data.error || '登录失败，请检查账号密码'}</span>`;
+        }
+        showToast(`Moodle 同步失败: ${data.error || '请检查密码'}`);
+      }
+    } catch (err) {
+      if (el.moodleStatusMsg) {
+        el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ 网络请求失败: ${err.message}</span>`;
+      }
+      showToast('请求超时，请检查网络连接');
+    } finally {
+      if (el.startMoodleSyncBtn) el.startMoodleSyncBtn.disabled = false;
     }
   }
 
@@ -458,6 +951,7 @@
         el.holidayAlertCard.classList.add('hidden');
       }
     }
+    updateBannerUrgentDdl();
   }
 
   function checkHolidayAlert(dateStr) {
@@ -1688,7 +2182,130 @@
     });
 
     // Forms & Import Actions
+    on(el.unifiedLoginForm, 'submit', handleUnifiedLogin);
     on(el.acLoginForm, 'submit', handleAcLogin);
+    on(el.moodleLoginForm, 'submit', handleMoodleLogin);
+
+    // Banner Urgent DDL Quick Jump (最显眼处 -> 课程下方)
+    on(el.bannerUrgentDdl, 'click', () => {
+      if (state.activeView !== 'dailyAgendaView') {
+        switchView('dailyAgendaView');
+      }
+      if (state.ddlCollapsed) {
+        state.ddlCollapsed = false;
+        localStorage.setItem('xmum_ddl_collapsed', false);
+        renderDeadlines();
+      }
+      if (el.moodleDdlCard) {
+        el.moodleDdlCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.moodleDdlCard.classList.add('pulse-highlight');
+        setTimeout(() => el.moodleDdlCard.classList.remove('pulse-highlight'), 1600);
+      }
+    });
+
+    on(el.quickSyncMoodleBtn, 'click', () => {
+      openModal(el.syncModal);
+      const unifiedTab = document.querySelector('.modal-tab[data-target="tabUnifiedLogin"]');
+      if (unifiedTab) unifiedTab.click();
+    });
+
+    on(el.toggleDdlCollapseBtn, 'click', () => {
+      state.ddlCollapsed = !state.ddlCollapsed;
+      localStorage.setItem('xmum_ddl_collapsed', state.ddlCollapsed);
+      renderDeadlines();
+    });
+
+    // Moodle Filter Chips
+    document.querySelectorAll('.ddl-filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.ddl-filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        state.activeDdlFilter = chip.dataset.filter || 'all';
+        renderDeadlines();
+      });
+    });
+
+    // Unified Demo Data (Schedule + Deadlines)
+    on(el.loadUnifiedDemoBtn, 'click', () => {
+      if (typeof DEFAULT_SCHEDULE !== 'undefined') {
+        state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        saveSchedule();
+        if (el.studentNameDisplay) el.studentNameDisplay.textContent = `Hi, ${state.schedule.studentName}`;
+      }
+      if (typeof DEFAULT_DEADLINES !== 'undefined') {
+        state.deadlines = JSON.parse(JSON.stringify(DEFAULT_DEADLINES));
+        saveDeadlines();
+      }
+      renderView();
+      renderDeadlines();
+      updateTodayBanner();
+      closeModal(el.syncModal);
+      showToast('🎉 成功载入全套演示数据 (课表 + 作业待办)！');
+    });
+
+    // Clear All User Data
+    on(el.clearAllUserDataBtn, 'click', () => {
+      state.schedule = { courses: [] };
+      state.deadlines = [];
+      saveSchedule();
+      saveDeadlines();
+      renderView();
+      renderDeadlines();
+      updateTodayBanner();
+      closeModal(el.syncModal);
+      showToast('已清空全部课表与作业数据');
+    });
+
+    // Load Demo Deadlines
+    on(el.loadDemoDeadlinesBtn, 'click', () => {
+      if (typeof DEFAULT_DEADLINES !== 'undefined') {
+        state.deadlines = JSON.parse(JSON.stringify(DEFAULT_DEADLINES));
+        saveDeadlines();
+        renderDeadlines();
+        closeModal(el.syncModal);
+        showToast('🎉 成功载入 Moodle 待办演示数据！');
+      }
+    });
+
+    // Clear Deadlines
+    on(el.clearDeadlinesBtn, 'click', () => {
+      state.deadlines = [];
+      saveDeadlines();
+      renderDeadlines();
+      closeModal(el.syncModal);
+      showToast('已清空全部待办列表');
+    });
+
+    // Two-way credential sync between all tabs (Unified, AC, Moodle)
+    const usernameInputs = [el.unifiedUsername, el.acUsername, el.moodleUsername].filter(Boolean);
+    usernameInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        const val = input.value;
+        usernameInputs.forEach(other => {
+          if (other !== input) other.value = val;
+        });
+      });
+    });
+
+    const passwordInputs = [el.unifiedPassword, el.acPassword, el.moodlePassword].filter(Boolean);
+    passwordInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        const val = input.value;
+        passwordInputs.forEach(other => {
+          if (other !== input) other.value = val;
+        });
+      });
+    });
+
+    if (el.unifiedSemester && el.acSemester) {
+      el.unifiedSemester.addEventListener('change', () => {
+        el.acSemester.value = el.unifiedSemester.value;
+      });
+      el.acSemester.addEventListener('change', () => {
+        el.unifiedSemester.value = el.acSemester.value;
+      });
+    }
+
     on(el.parseHtmlBtn, 'click', handleHtmlParse);
     on(el.loadDemoBtn, 'click', () => {
       state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
