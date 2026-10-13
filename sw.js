@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v10';
+const CACHE_NAME = 'xmum-schedule-v11';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ offline: true }), {
+        return new Response(JSON.stringify({ success: false, error: "网络无法连通：请检查手机网络状态" }), {
           headers: { 'Content-Type': 'application/json' }
         });
       })

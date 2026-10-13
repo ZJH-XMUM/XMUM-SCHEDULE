@@ -426,7 +426,8 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path == '/api/schedule':
+        parsed_path = urllib.parse.urlparse(self.path).path
+        if parsed_path == '/api/schedule':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -436,7 +437,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
             
-        elif self.path == '/api/deadlines':
+        elif parsed_path == '/api/deadlines':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -449,7 +450,8 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        if self.path == '/api/sync':
+        parsed_path = urllib.parse.urlparse(self.path).path
+        if parsed_path == '/api/sync':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
@@ -480,7 +482,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
 
-        elif self.path == '/api/moodle_sync':
+        elif parsed_path == '/api/moodle_sync':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
@@ -503,7 +505,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
 
-        elif self.path == '/api/full_sync':
+        elif parsed_path == '/api/full_sync':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
@@ -557,7 +559,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
 
-        elif self.path == '/api/save_deadlines':
+        elif parsed_path == '/api/save_deadlines':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
@@ -573,7 +575,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
 
-        elif self.path == '/api/parse_html':
+        elif parsed_path == '/api/parse_html':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:
@@ -599,7 +601,7 @@ class ScheduleAppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
 
-        elif self.path == '/api/save_schedule':
+        elif parsed_path == '/api/save_schedule':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             try:

@@ -593,12 +593,14 @@
     try {
       let fullRes = null;
       try {
-        const resp = await fetch('/api/full_sync', {
+        const resp = await fetch('/api/full_sync?action=full_sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, semester, sync_ac: syncAc, sync_moodle: syncMoodle })
+          body: JSON.stringify({ action: 'full_sync', username, password, semester, sync_ac: syncAc, sync_moodle: syncMoodle })
         });
-        if (resp.ok) fullRes = await resp.json();
+        if (resp.ok) {
+          try { fullRes = await resp.json(); } catch (_) {}
+        }
       } catch (err) {
         console.warn('full_sync error, fallback to sequential', err);
       }
@@ -634,13 +636,16 @@
           if (el.unifiedStatusMsg) {
             el.unifiedStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ [1/2] 正在连接 AC 教务系统同步课表...</span>';
           }
-          const acResp = await fetch('/api/sync', {
+          const acResp = await fetch('/api/sync?action=sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, semester })
+            body: JSON.stringify({ action: 'sync', username, password, semester })
           });
-          const acData = await acResp.json();
-          if (acData.success && acData.courses) {
+          let acData = null;
+          try { acData = await acResp.json(); } catch (_) {
+            acData = { success: false, error: acResp.status === 504 ? '教务系统连接超时 (504)' : `服务异常 (HTTP ${acResp.status})` };
+          }
+          if (acData && acData.success && acData.courses) {
             acSuccess = true;
             acCount = acData.courses.length;
             state.schedule = {
@@ -658,13 +663,16 @@
           if (el.unifiedStatusMsg) {
             el.unifiedStatusMsg.innerHTML = '<span style="color:#60a5fa;">⏳ [2/2] 正在连接 Moodle 学习网同步作业...</span>';
           }
-          const mResp = await fetch('/api/moodle_sync', {
+          const mResp = await fetch('/api/moodle_sync?action=moodle_sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ action: 'moodle_sync', username, password })
           });
-          const mData = await mResp.json();
-          if (mData.success && mData.deadlines) {
+          let mData = null;
+          try { mData = await mResp.json(); } catch (_) {
+            mData = { success: false, error: mResp.status === 504 ? 'Moodle 连接超时 (504)' : `服务异常 (HTTP ${mResp.status})` };
+          }
+          if (mData && mData.success && mData.deadlines) {
             moodleSuccess = true;
             moodleCount = mData.deadlines.length;
             state.deadlines = mData.deadlines;
@@ -691,17 +699,20 @@
           if (el.unifiedStatusMsg) el.unifiedStatusMsg.innerHTML = '';
         }, 1400);
       } else {
-        const errMsg = fullRes?.error || '同步失败，请检查学号与统一密码是否正确';
+        const errMsg = fullRes?.error || '同步失败：请检查学号与密码，或确认是否连接校园网络';
         if (el.unifiedStatusMsg) {
           el.unifiedStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${errMsg}</span>`;
         }
         showToast(`同步失败: ${errMsg}`);
       }
     } catch (err) {
+      const msg = (err.name === 'TypeError' || err.message.includes('fetch'))
+        ? '无法连接服务器：请检查网络状态或是否连接校园网/VPN'
+        : `请求异常: ${err.message}`;
       if (el.unifiedStatusMsg) {
-        el.unifiedStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ 请求异常: ${err.message}</span>`;
+        el.unifiedStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${msg}</span>`;
       }
-      showToast('请求超时，请检查网络连接');
+      showToast(msg);
     } finally {
       if (el.startUnifiedSyncBtn) el.startUnifiedSyncBtn.disabled = false;
     }
@@ -723,14 +734,20 @@
     if (el.startMoodleSyncBtn) el.startMoodleSyncBtn.disabled = true;
 
     try {
-      const resp = await fetch('/api/moodle_sync', {
+      const resp = await fetch('/api/moodle_sync?action=moodle_sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ action: 'moodle_sync', username, password })
       });
 
-      const data = await resp.json();
-      if (data.success) {
+      let data = null;
+      try {
+        data = await resp.json();
+      } catch (_) {
+        data = { success: false, error: resp.status === 504 ? 'Moodle 响应超时 (504)，请稍后再试' : `服务响应异常 (HTTP ${resp.status})` };
+      }
+
+      if (data && data.success) {
         state.deadlines = data.deadlines || [];
         saveDeadlines();
         renderDeadlines();
@@ -744,16 +761,20 @@
           if (el.moodleStatusMsg) el.moodleStatusMsg.innerHTML = '';
         }, 1200);
       } else {
+        const errMsg = data?.error || '登录失败，请检查账号密码或校园网络';
         if (el.moodleStatusMsg) {
-          el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${data.error || '登录失败，请检查账号密码'}</span>`;
+          el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${errMsg}</span>`;
         }
-        showToast(`Moodle 同步失败: ${data.error || '请检查密码'}`);
+        showToast(`Moodle 同步失败: ${errMsg}`);
       }
     } catch (err) {
+      const msg = (err.name === 'TypeError' || err.message.includes('fetch'))
+        ? '无法连接 Moodle 服务：请检查网络状态或是否连接校园网/VPN'
+        : `请求异常: ${err.message}`;
       if (el.moodleStatusMsg) {
-        el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ 网络请求失败: ${err.message}</span>`;
+        el.moodleStatusMsg.innerHTML = `<span style="color:#f43f5e;">❌ ${msg}</span>`;
       }
-      showToast('请求超时，请检查网络连接');
+      showToast(msg);
     } finally {
       if (el.startMoodleSyncBtn) el.startMoodleSyncBtn.disabled = false;
     }
@@ -1885,14 +1906,19 @@
     statusMsg.style.color = '#38bdf8';
 
     try {
-      const response = await fetch('/api/sync', {
+      const response = await fetch('/api/sync?action=sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, semester })
+        body: JSON.stringify({ action: 'sync', username, password, semester })
       });
 
-      const res = await response.json();
-      if (res.success && res.courses && res.courses.length > 0) {
+      let res = null;
+      try {
+        res = await response.json();
+      } catch (_) {
+        res = { success: false, error: response.status === 504 ? '教务系统响应超时 (504)，请稍后再试' : `服务响应异常 (HTTP ${response.status})` };
+      }
+      if (res && res.success && res.courses && res.courses.length > 0) {
         state.currentSemesterId = semester;
         if (el.semesterSelect) el.semesterSelect.value = semester;
         state.schedule = {

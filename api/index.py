@@ -376,8 +376,10 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
-        parsed_path = urllib.parse.urlparse(self.path).path
-        forwarded_path = self.headers.get('x-forwarded-uri', '') or self.headers.get('x-matched-path', '') or ''
+        parsed_url = urllib.parse.urlparse(self.path)
+        parsed_path = parsed_url.path
+        query_params = urllib.parse.parse_qs(parsed_url.query)
+        action_from_query = query_params.get('action', [''])[0]
         
         data = {}
         try:
@@ -386,12 +388,21 @@ class handler(BaseHTTPRequestHandler):
         except Exception:
             pass
 
-        is_full_sync = '/full_sync' in parsed_path or '/full_sync' in forwarded_path or data.get('type') == 'full'
-        is_moodle_sync = ('/moodle_sync' in parsed_path or '/moodle_sync' in forwarded_path or data.get('type') == 'moodle') and not is_full_sync
-        is_sync = ('/sync' in parsed_path or '/sync' in forwarded_path or ('username' in data and 'password' in data)) and not is_moodle_sync and not is_full_sync
-        is_parse = '/parse_html' in parsed_path or '/parse_html' in forwarded_path or ('html' in data and 'username' not in data)
-        is_save = '/save_schedule' in parsed_path or '/save_schedule' in forwarded_path
-        is_save_deadlines = '/save_deadlines' in parsed_path or '/save_deadlines' in forwarded_path
+        action_from_body = data.get('action', '') or data.get('type', '')
+        action = action_from_query or action_from_body
+        forwarded_path = self.headers.get('x-forwarded-uri', '') or self.headers.get('x-matched-path', '') or ''
+
+        is_full_sync = action == 'full_sync' or '/full_sync' in parsed_path or '/full_sync' in forwarded_path
+        is_moodle_sync = action == 'moodle_sync' or '/moodle_sync' in parsed_path or '/moodle_sync' in forwarded_path
+        is_sync = action == 'sync' or '/sync' in parsed_path or '/sync' in forwarded_path
+        is_parse = action == 'parse_html' or '/parse_html' in parsed_path or '/parse_html' in forwarded_path or ('html' in data and 'username' not in data)
+        is_save = action == 'save_schedule' or '/save_schedule' in parsed_path or '/save_schedule' in forwarded_path
+        is_save_deadlines = action == 'save_deadlines' or '/save_deadlines' in parsed_path or '/save_deadlines' in forwarded_path
+
+        # Fallback if action not specified
+        if not (is_full_sync or is_moodle_sync or is_sync or is_parse or is_save or is_save_deadlines):
+            if 'username' in data and 'password' in data:
+                is_sync = True
 
         if is_full_sync:
             try:
@@ -470,11 +481,14 @@ class handler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_GET(self):
-        parsed_path = urllib.parse.urlparse(self.path).path
+        parsed_url = urllib.parse.urlparse(self.path)
+        parsed_path = parsed_url.path
+        query_params = urllib.parse.parse_qs(parsed_url.query)
+        action = query_params.get('action', [''])[0]
         forwarded_path = self.headers.get('x-forwarded-uri', '') or self.headers.get('x-matched-path', '') or ''
         
         # 1. API Deadlines retrieval
-        if '/deadlines' in parsed_path or '/deadlines' in forwarded_path:
+        if action == 'deadlines' or '/deadlines' in parsed_path or '/deadlines' in forwarded_path:
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -484,7 +498,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # 2. API Schedule retrieval
-        if '/schedule' in parsed_path or '/schedule' in forwarded_path:
+        if action == 'schedule' or '/schedule' in parsed_path or '/schedule' in forwarded_path:
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
