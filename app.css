@@ -710,7 +710,16 @@ body.theme-light .moodle-ddl-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 4px 2px;
+  transition: opacity var(--transition-fast);
+}
+
+.ddl-header:hover {
+  opacity: 0.95;
 }
 
 .ddl-title-wrap {
@@ -732,10 +741,11 @@ body.theme-light .moodle-ddl-card {
 }
 
 .ddl-title {
-  font-size: 0.96rem;
+  font-size: 0.98rem;
   font-weight: 800;
   margin: 0;
   color: var(--text-main);
+  letter-spacing: 0.01em;
 }
 
 .ddl-actions {
@@ -744,39 +754,57 @@ body.theme-light .moodle-ddl-card {
   gap: 6px;
 }
 
-.ddl-sync-quick-btn {
-  background: rgba(59, 130, 246, 0.12);
-  color: var(--accent-cyan);
-  border: 1px solid rgba(6, 182, 212, 0.28);
-  border-radius: var(--radius-full);
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all var(--transition-fast);
-}
-
-.ddl-sync-quick-btn:hover {
-  background: rgba(59, 130, 246, 0.24);
-  transform: translateY(-1px);
-}
-
 .ddl-toggle-collapse-btn {
-  background: transparent;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
   color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 0.74rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  transition: transform var(--transition-fast);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ddl-toggle-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
   color: var(--text-main);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.ddl-toggle-collapse-btn:active {
+  transform: scale(0.96);
+}
+
+.ddl-collapse-text {
+  font-size: 0.74rem;
+  letter-spacing: 0.5px;
+}
+
+.ddl-collapse-arrow {
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.moodle-ddl-card.collapsed .ddl-collapse-arrow {
+  transform: rotate(-90deg);
+}
+
+body.theme-light .ddl-toggle-collapse-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+body.theme-light .ddl-toggle-collapse-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .ddl-content-body.collapsed {
@@ -817,59 +845,100 @@ body.theme-light .ddl-filter-chip {
 }
 
 /* Deadline List & Items */
+/* Deadline List & Items - Redesigned Breathable Task Cards for Mobile */
 .ddl-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ddl-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px 14px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
-  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 body.theme-light .ddl-item {
-  background: #f8fafc;
+  background: #ffffff;
+  border-color: rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .ddl-item:hover {
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(245, 158, 11, 0.45);
   transform: translateY(-1px);
 }
 
 .ddl-item.completed {
-  opacity: 0.55;
+  opacity: 0.58;
 }
 
 .ddl-item.completed .ddl-item-title {
   text-decoration: line-through;
+  opacity: 0.75;
 }
 
 .ddl-item.urgent {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.45);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(15, 23, 42, 0.65) 100%);
 }
 
-.ddl-countdown-col {
+body.theme-light .ddl-item.urgent {
+  background: linear-gradient(135deg, rgba(254, 226, 226, 0.6) 0%, #ffffff 100%);
+}
+
+/* Card Top Row: Badges on left, Countdown Pill + Check Button on right */
+.ddl-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ddl-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ddl-card-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
-  min-width: 68px;
-  text-align: center;
+}
+
+.ddl-course-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #3b82f6;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.ddl-type-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .ddl-countdown-pill {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .ddl-countdown-pill.urgent {
@@ -902,81 +971,70 @@ body.theme-light .ddl-item {
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.ddl-info-col {
-  flex: 1;
-  min-width: 0;
-}
-
-.ddl-header-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.ddl-course-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  background: #3b82f6;
-  padding: 2px 7px;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-}
-
-.ddl-type-tag {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
+/* Card Title: Full width, clean, comfortable typography */
+.ddl-card-title-row {
+  width: 100%;
 }
 
 .ddl-item-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
+  line-height: 1.45;
+  word-break: break-word;
   letter-spacing: 0.01em;
 }
 
+/* Card Bottom: Due Time on left, Open in Moodle on right */
+.ddl-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-top: 2px;
+}
+
+body.theme-light .ddl-card-bottom {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+
 .ddl-meta-row {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.ddl-actions-col {
-  display: flex;
-  align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .btn-ddl-check {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 4px 6px;
-  font-size: 0.72rem;
+  padding: 3px 6px;
+  font-size: 0.74rem;
   cursor: pointer;
   color: var(--text-muted);
   transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-ddl-check:hover {
   background: rgba(16, 185, 129, 0.2);
   color: #10b981;
+  transform: scale(1.05);
 }
 
 .btn-ddl-open {
   background: rgba(59, 130, 246, 0.12);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
   font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
@@ -985,12 +1043,14 @@ body.theme-light .ddl-item {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
 .btn-ddl-open:hover {
   background: rgba(59, 130, 246, 0.25);
   color: #93c5fd;
+  transform: translateY(-1px);
 }
 
 .ddl-empty-box {
@@ -2915,4 +2975,116 @@ body.theme-light .update-feature-item:hover {
   font-size: 0.76rem;
   color: var(--text-muted);
   line-height: 1.45;
+}
+
+/* Update Notice Tabs & History Timeline */
+.notice-tabs-row {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+.notice-tab-btn {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.notice-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.notice-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+body.theme-light .notice-tab-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+body.theme-light .notice-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.update-history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+
+.history-version-block {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+body.theme-light .history-version-block {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.history-version-block:hover {
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.history-version-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.history-version-tag {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.history-version-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.history-version-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.history-items-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.history-items-list li {
+  margin-bottom: 4px;
 }

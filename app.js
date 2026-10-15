@@ -107,9 +107,13 @@
     moodleDdlCard: document.getElementById('moodleDdlCard'),
     moodleDdlBody: document.getElementById('moodleDdlBody'),
     moodleDdlList: document.getElementById('moodleDdlList'),
-    quickSyncMoodleBtn: document.getElementById('quickSyncMoodleBtn'),
+    ddlHeaderClickable: document.getElementById('ddlHeaderClickable'),
     toggleDdlCollapseBtn: document.getElementById('toggleDdlCollapseBtn'),
+    ddlCollapseText: document.getElementById('ddlCollapseText'),
     ddlCollapseIcon: document.getElementById('ddlCollapseIcon'),
+    headerLoginKeyIcon: document.getElementById('headerLoginKeyIcon'),
+    headerLoginBtnText: document.getElementById('headerLoginBtnText'),
+    headerLoginBadgeDot: document.getElementById('headerLoginBadgeDot'),
     ddlCountAll: document.getElementById('ddlCountAll'),
     ddlCountUrgent: document.getElementById('ddlCountUrgent'),
     ddlCountDone: document.getElementById('ddlCountDone'),
@@ -137,6 +141,11 @@
     updateNoticeTitle: document.getElementById('updateNoticeTitle'),
     updateNoticeDesc: document.getElementById('updateNoticeDesc'),
     updateFeaturesList: document.getElementById('updateFeaturesList'),
+    noticeTabCurrentBtn: document.getElementById('noticeTabCurrentBtn'),
+    noticeTabHistoryBtn: document.getElementById('noticeTabHistoryBtn'),
+    noticeCurrentView: document.getElementById('noticeCurrentView'),
+    noticeHistoryView: document.getElementById('noticeHistoryView'),
+    updateHistoryTimeline: document.getElementById('updateHistoryTimeline'),
     closeUpdateNoticeBtn: document.getElementById('closeUpdateNoticeBtn'),
     confirmUpdateNoticeBtn: document.getElementById('confirmUpdateNoticeBtn')
   };
@@ -177,6 +186,7 @@
       renderAcademicCalendar();
       updateRecycleCountBadge();
       checkUpdateNotice();
+      updateHeaderLoginState();
       requestPersistentStorage();
     } catch (err) {
       console.error('Core init error:', err);
@@ -202,19 +212,76 @@
         desc: '底层重构离线缓存导航，首次打开后每次启动均为 0ms 瞬间秒开展现，告别卡顿与加载延迟。'
       },
       {
+        icon: '📱',
+        title: '作业任务卡片全屏舒展重构',
+        desc: '彻底解决手机端作业信息堆叠挤压问题，标题整行展示，课程标签与倒计时一目了然。'
+      },
+      {
         icon: '✨',
-        title: '底部排版重构，舒适告别拥挤',
-        desc: '重构全局中文字体层级与行距，加大课表卡片和待办列表留白，视野更清晰美观。'
+        title: '触控折叠控件与更纯净顶栏',
+        desc: 'Moodle 卡片升级为整栏触控胶囊折叠；登录后自动显示已连接学生姓名，移除多余圆点。'
+      },
+      {
+        icon: '📜',
+        title: '支持历史版本记录随时查阅',
+        desc: '更新弹窗新增历史版本时间线，历次更新亮点一键回看。'
       },
       {
         icon: '🛡️',
-        title: '防手机清理垃圾防丢数据',
-        desc: '引入操作系统级持久化存储与 IndexedDB 双重硬核容灾，手机使用手机管家清理垃圾数据绝不丢失！'
+        title: '手机管家清理垃圾防丢数据',
+        desc: '启用持久化存储 API 与 IndexedDB 结构化数据库双重防护，清理垃圾绝不丢失课表。'
+      }
+    ],
+    history: [
+      {
+        version: 'v1.5.0',
+        date: '2026-10-15',
+        title: '直观登录入口与极速缓存',
+        items: [
+          '右上角升级为醒目的【🔑 登录】直观入口，快速登录校园账号',
+          '精简今日课表看板，移除冗余的一键同步按钮，界面更聚焦',
+          'Service Worker 接入 Stale-While-Revalidate 本地缓存'
+        ]
       },
       {
-        icon: '📶',
-        title: '强悍弱网与无网离线运行',
-        desc: '无网络或飞行模式下，所有已导入课表、校历及作业倒计时均能完全离线顺畅使用。'
+        version: 'v1.4.0',
+        date: '2026-10-14',
+        title: '课程解析与持久化加固',
+        items: [
+          '彻底修复部分课程切屏后被误清空的隐患',
+          '全面升级支持半学期课程（如 1~8 周）及同时间段多门课解析',
+          '增加更新公告一键通知与随时回看小喇叭'
+        ]
+      },
+      {
+        version: 'v1.3.0',
+        date: '2026-10-12',
+        title: 'Moodle 作业 DDL 深度融合',
+        items: [
+          '支持一键登录同步教务排课与 Moodle 待办作业',
+          '今日看板新增紧急作业置顶倒计时卡片',
+          '支持按紧急程度筛选作业与一键跳转 Moodle 提交'
+        ]
+      },
+      {
+        version: 'v1.2.0',
+        date: '2026-10-08',
+        title: '实时动态授课横幅',
+        items: [
+          '智能感知当前时间，自动展示【上课中 / 距下课倒计时 / 下一节课】',
+          '课程回收站支持恢复误删课程',
+          '多学期（2026/09、2026/04、2027 等）平滑无缝切换'
+        ]
+      },
+      {
+        version: 'v1.0.0',
+        date: '2026-10-06',
+        title: 'XMUM 课表助手正式发布',
+        items: [
+          '厦门大学马来西亚分校专属课表与校历通',
+          '支持 PWA 安装至手机主屏幕离线使用',
+          '支持深色/浅色优雅学术设计风格自由切换'
+        ]
       }
     ]
   };
@@ -234,6 +301,20 @@
             <div class="update-feature-title">${f.title}</div>
             <div class="update-feature-desc">${f.desc}</div>
           </div>
+        </div>
+      `).join('');
+    }
+    if (el.updateHistoryTimeline && APP_RELEASE_INFO.history) {
+      el.updateHistoryTimeline.innerHTML = APP_RELEASE_INFO.history.map(h => `
+        <div class="history-version-block">
+          <div class="history-version-header">
+            <span class="history-version-tag">${h.version}</span>
+            <span class="history-version-date">${h.date}</span>
+          </div>
+          <div class="history-version-title">${h.title}</div>
+          <ul class="history-items-list">
+            ${h.items.map(item => `<li>${item}</li>`).join('')}
+          </ul>
         </div>
       `).join('');
     }
@@ -405,6 +486,8 @@
       if (el.semesterSelect) el.semesterSelect.value = state.currentSemesterId;
     }
 
+    updateHeaderLoginState();
+
     // Also fetch from server to ensure persistence across devices/refreshes
     syncScheduleFromServer();
   }
@@ -435,6 +518,7 @@
             renderView();
             updateNextClassCard();
             updateRecycleCountBadge();
+            updateHeaderLoginState();
           }
         }
       }
@@ -532,17 +616,54 @@
     showToast(item.completed ? '🎉 恭喜！该作业已标记完成！' : '已重置为待办状态');
   }
 
+  // Dynamic Header Login Button State
+  function updateHeaderLoginState() {
+    const isImported = state.schedule && state.schedule.courses && state.schedule.courses.length > 0;
+    const hasName = state.schedule && state.schedule.studentName && state.schedule.studentName !== '同学';
+
+    if (el.headerLoginBadgeDot) {
+      el.headerLoginBadgeDot.style.display = 'none';
+    }
+
+    if (el.headerLoginBtnText) {
+      if (isImported || hasName) {
+        el.headerLoginBtnText.textContent = hasName ? state.schedule.studentName : '已同步';
+        if (el.syncModalBtn) {
+          el.syncModalBtn.classList.add('is-logged-in');
+          el.syncModalBtn.title = `已连接账号: ${state.schedule.studentName || '学生'} (点击切换账号或重新同步)`;
+        }
+        if (el.headerLoginKeyIcon) {
+          el.headerLoginKeyIcon.textContent = '👤';
+        }
+      } else {
+        el.headerLoginBtnText.textContent = '登录';
+        if (el.syncModalBtn) {
+          el.syncModalBtn.classList.remove('is-logged-in');
+          el.syncModalBtn.title = '登录校园账号同步课表与作业';
+        }
+        if (el.headerLoginKeyIcon) {
+          el.headerLoginKeyIcon.textContent = '🔑';
+        }
+      }
+    }
+  }
+
+  // 4. Deadlines Rendering (Redesigned Breathable Task Cards)
   function renderDeadlines() {
     if (!el.moodleDdlList) return;
     
-    // Check collapse state
-    if (el.moodleDdlBody && el.ddlCollapseIcon) {
+    // Check collapse state with interactive pill text & arrow
+    if (el.moodleDdlBody) {
       if (state.ddlCollapsed) {
         el.moodleDdlBody.classList.add('collapsed');
-        el.ddlCollapseIcon.textContent = '▸';
+        if (el.ddlCollapseIcon) el.ddlCollapseIcon.textContent = '▸';
+        if (el.ddlCollapseText) el.ddlCollapseText.textContent = '展开';
+        if (el.moodleDdlCard) el.moodleDdlCard.classList.add('collapsed');
       } else {
         el.moodleDdlBody.classList.remove('collapsed');
-        el.ddlCollapseIcon.textContent = '▾';
+        if (el.ddlCollapseIcon) el.ddlCollapseIcon.textContent = '▾';
+        if (el.ddlCollapseText) el.ddlCollapseText.textContent = '收起';
+        if (el.moodleDdlCard) el.moodleDdlCard.classList.remove('collapsed');
       }
     }
 
@@ -569,7 +690,6 @@
     } else if (state.activeDdlFilter === 'completed') {
       displayItems = completedItems;
     } else {
-      // 'all': uncompleted first, sorted by due time, then completed
       const sortedUncompleted = [...uncompleted].sort((a, b) => (a.dueTimestamp || 9999999999) - (b.dueTimestamp || 9999999999));
       displayItems = sortedUncompleted.concat(completedItems);
     }
@@ -595,7 +715,7 @@
         emptyDiv.innerHTML = `
           <div class="empty-icon">🎉</div>
           <div class="empty-txt">当前暂无待提交的 Moodle 作业！</div>
-          <div class="empty-sub">若任课教师刚发布新任务，可点击上方【同步 Moodle】获取最新数据</div>
+          <div class="empty-sub">若任课教师刚发布新任务，可点击上方【登录】获取最新数据</div>
           <button class="btn-pill-small secondary" id="emptyLoadDemoBtn" style="margin-top: 4px;">🌟 载入作业演示数据</button>
         `;
         const emptyBtn = emptyDiv.querySelector('#emptyLoadDemoBtn');
@@ -653,24 +773,26 @@
       const formattedTime = item.dueTime ? `${item.dueDate} ${item.dueTime}` : (item.dueDate || '近期截止');
 
       row.innerHTML = `
-        <div class="ddl-countdown-col">
-          <span class="ddl-countdown-pill ${pillClass}">${pillText}</span>
-        </div>
-        <div class="ddl-info-col">
-          <div class="ddl-header-row">
+        <div class="ddl-card-top">
+          <div class="ddl-card-badges">
             <span class="ddl-course-badge">${item.courseCode || 'COURSE'}</span>
             <span class="ddl-type-tag">${typeLabel}</span>
           </div>
+          <div class="ddl-card-status">
+            <span class="ddl-countdown-pill ${pillClass}">${pillText}</span>
+            <button class="btn-ddl-check" title="${item.completed ? '标记为未完成' : '标记已完成'}">
+              ${item.completed ? '↩️' : '✅'}
+            </button>
+          </div>
+        </div>
+        <div class="ddl-card-title-row">
           <div class="ddl-item-title" title="${item.title}">${item.title}</div>
+        </div>
+        <div class="ddl-card-bottom">
           <div class="ddl-meta-row">
             <span>🕒 ${formattedTime}</span>
             ${item.courseName ? `<span style="opacity:0.75;">• ${item.courseName}</span>` : ''}
           </div>
-        </div>
-        <div class="ddl-actions-col">
-          <button class="btn-ddl-check" title="${item.completed ? '标记为未完成' : '标记已完成'}">
-            ${item.completed ? '↩️' : '✅'}
-          </button>
           <a href="${item.url || 'https://l.xmu.edu.my/my/'}" target="_blank" rel="noopener noreferrer" class="btn-ddl-open" title="去 Moodle 提交">
             去提交 ↗
           </a>
@@ -2490,6 +2612,20 @@
       if (e.target === el.updateNoticeModal) dismissUpdateNotice();
     });
 
+    // Update Notice Tabs (Current Version vs History)
+    on(el.noticeTabCurrentBtn, 'click', () => {
+      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.add('active');
+      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.remove('active');
+      if (el.noticeCurrentView) el.noticeCurrentView.classList.remove('hidden');
+      if (el.noticeHistoryView) el.noticeHistoryView.classList.add('hidden');
+    });
+    on(el.noticeTabHistoryBtn, 'click', () => {
+      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.add('active');
+      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.remove('active');
+      if (el.noticeHistoryView) el.noticeHistoryView.classList.remove('hidden');
+      if (el.noticeCurrentView) el.noticeCurrentView.classList.add('hidden');
+    });
+
     // Theme toggle
     on(el.themeToggleBtn, 'click', () => {
       applyTheme(state.theme === 'dark' ? 'light' : 'dark');
@@ -2592,11 +2728,18 @@
       if (unifiedTab) unifiedTab.click();
     });
 
-    on(el.toggleDdlCollapseBtn, 'click', () => {
+    const toggleCollapse = () => {
       state.ddlCollapsed = !state.ddlCollapsed;
       localStorage.setItem('xmum_ddl_collapsed', state.ddlCollapsed);
       renderDeadlines();
+    };
+
+    on(el.toggleDdlCollapseBtn, 'click', (e) => {
+      e.stopPropagation();
+      toggleCollapse();
     });
+
+    on(el.ddlHeaderClickable, 'click', toggleCollapse);
 
     // Moodle Filter Chips
     document.querySelectorAll('.ddl-filter-chip').forEach(chip => {

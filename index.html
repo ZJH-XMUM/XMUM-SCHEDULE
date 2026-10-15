@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=17">
+  <link rel="stylesheet" href="app.css?v=18">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -44,9 +44,8 @@
             <span class="badge-count hidden" id="recycleCountBadge">0</span>
           </button>
           <button class="btn-header-login" id="syncModalBtn" title="登录校园账号同步课表与作业" aria-label="登录">
-            <span class="login-key-icon">🔑</span>
-            <span class="login-btn-label">登录</span>
-            <span class="btn-badge-dot"></span>
+            <span class="login-key-icon" id="headerLoginKeyIcon">🔑</span>
+            <span class="login-btn-label" id="headerLoginBtnText">登录</span>
           </button>
           <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
             <span class="theme-icon">🌙</span>
@@ -160,14 +159,15 @@
 
         <!-- Moodle Deadlines & Tasks Card (课程下方) -->
         <section class="moodle-ddl-card" id="moodleDdlCard">
-          <div class="ddl-header">
+          <div class="ddl-header" id="ddlHeaderClickable" title="点击展开/收起待办">
             <div class="ddl-title-wrap">
               <span class="ddl-badge">MOODLE DEADLINES</span>
               <h3 class="ddl-title">⏰ 课业待办与截止倒计时</h3>
             </div>
             <div class="ddl-actions">
-              <button class="ddl-toggle-collapse-btn" id="toggleDdlCollapseBtn" title="展开/收起待办">
-                <span id="ddlCollapseIcon">▾</span>
+              <button class="ddl-toggle-collapse-btn" id="toggleDdlCollapseBtn" title="展开/收起待办" aria-label="展开或收起待办列表">
+                <span class="ddl-collapse-text" id="ddlCollapseText">收起</span>
+                <span class="ddl-collapse-arrow" id="ddlCollapseIcon">▾</span>
               </button>
             </div>
           </div>
@@ -570,20 +570,31 @@
       </div>
     </div>
 
-    <!-- Modal: Release / Update Notice (一次性更新公告) -->
+    <!-- Modal: Release / Update Notice (一次性更新公告 + 历史版本记录) -->
     <div class="modal-backdrop" id="updateNoticeModal">
       <div class="modal-card update-notice-card">
         <div class="modal-header">
           <div class="modal-title-wrap">
-            <span class="modal-badge version-badge" id="updateNoticeBadge">🎉 升级公告 • v1.4.0</span>
-            <h3 class="modal-title" id="updateNoticeTitle">XMUM 课表助手新版上线</h3>
+            <span class="modal-badge version-badge" id="updateNoticeBadge">🎉 升级公告 • v1.6.0</span>
+            <h3 class="modal-title" id="updateNoticeTitle">XMUM 课表助手全面升级</h3>
           </div>
           <button class="btn-close" id="closeUpdateNoticeBtn">×</button>
         </div>
+        <div class="notice-tabs-row">
+          <button class="notice-tab-btn active" id="noticeTabCurrentBtn" data-target="current">✨ 本次更新</button>
+          <button class="notice-tab-btn" id="noticeTabHistoryBtn" data-target="history">📜 历史版本记录</button>
+        </div>
         <div class="modal-body">
-          <p class="update-notice-desc" id="updateNoticeDesc">感谢使用 XMUM 课表助手！本次更新带来了以下重要改进：</p>
-          <div class="update-features-list" id="updateFeaturesList">
-            <!-- Dynamically populated from APP_RELEASE_INFO -->
+          <div id="noticeCurrentView">
+            <p class="update-notice-desc" id="updateNoticeDesc">感谢使用 XMUM 课表助手！本次更新带来了以下重要改进：</p>
+            <div class="update-features-list" id="updateFeaturesList">
+              <!-- Dynamically populated from APP_RELEASE_INFO -->
+            </div>
+          </div>
+          <div id="noticeHistoryView" class="hidden">
+            <div class="update-history-timeline" id="updateHistoryTimeline">
+              <!-- Dynamically populated from APP_RELEASE_INFO.history -->
+            </div>
           </div>
           <div class="update-notice-footer" style="margin-top: 18px;">
             <button class="btn-primary full-width" id="confirmUpdateNoticeBtn">
@@ -604,9 +615,9 @@
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=17"></script>
-  <script src="data/sample_schedule.js?v=17"></script>
-  <script src="app.js?v=17"></script>
+  <script src="data/academic_calendar.js?v=18"></script>
+  <script src="data/sample_schedule.js?v=18"></script>
+  <script src="app.js?v=18"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

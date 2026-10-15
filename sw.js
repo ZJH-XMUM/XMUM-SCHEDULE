@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v17';
+const CACHE_NAME = 'xmum-schedule-v18';
 const ASSETS_TO_CACHE = [
   '/',
   './',
