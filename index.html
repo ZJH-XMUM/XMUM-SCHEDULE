@@ -17,11 +17,14 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <!-- Google Fonts -->
+  <!-- Google Fonts: Asynchronous high-speed load with native PingFang fallback -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=15">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="app.css?v=16">
   <!-- Vercel Web Analytics & Insights -->
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -54,8 +57,9 @@
             <span class="trash-icon">🗑️</span>
             <span class="badge-count hidden" id="recycleCountBadge">0</span>
           </button>
-          <button class="btn-icon" id="syncModalBtn" title="同步 AC 课表" aria-label="同步课表">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <button class="btn-header-login" id="syncModalBtn" title="登录校园账号同步课表与作业" aria-label="登录">
+            <span class="login-key-icon">🔑</span>
+            <span class="login-btn-label">登录</span>
             <span class="btn-badge-dot"></span>
           </button>
           <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
@@ -106,8 +110,8 @@
           <div class="next-class-content" id="nextClassContent">
             <div class="next-class-name">✨ 欢迎使用 XMUM 课表与校历通！</div>
             <div class="next-class-meta">
-              <span class="meta-tag venue">📍 点击右上角【同步 AC 课表】</span>
-              <span class="meta-tag time">🚀 快速导入你的个人课表</span>
+              <span class="meta-tag venue">📍 点击右上角【登录】按钮</span>
+              <span class="meta-tag time">🚀 快速同步你的个人课表与作业</span>
             </div>
           </div>
         </div>
@@ -176,9 +180,6 @@
               <h3 class="ddl-title">⏰ 课业待办与截止倒计时</h3>
             </div>
             <div class="ddl-actions">
-              <button class="ddl-sync-quick-btn" id="quickSyncMoodleBtn" title="一键同步 Moodle 作业">
-                <span class="icon">🔄</span> 一键同步
-              </button>
               <button class="ddl-toggle-collapse-btn" id="toggleDdlCollapseBtn" title="展开/收起待办">
                 <span id="ddlCollapseIcon">▾</span>
               </button>
@@ -617,8 +618,8 @@
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
 
   <!-- Scripts -->
-  <script src="data/academic_calendar.js?v=15"></script>
-  <script src="data/sample_schedule.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="data/academic_calendar.js?v=16"></script>
+  <script src="data/sample_schedule.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

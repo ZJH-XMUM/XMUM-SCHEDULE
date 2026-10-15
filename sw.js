@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v15';
+const CACHE_NAME = 'xmum-schedule-v16';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
@@ -37,9 +37,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // Network-first for dynamic API routes
+  // Dynamic API routes: Network-only with friendly offline error
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -51,32 +54,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first with cache fallback for code assets (html, js, css)
-  const isCodeAsset = url.pathname.endsWith('.html') ||
-                      url.pathname.endsWith('.js') ||
-                      url.pathname.endsWith('.css') ||
-                      url.pathname === '/' ||
-                      url.pathname.endsWith('/');
-
-  if (isCodeAsset) {
-    event.respondWith(
-      fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => caches.match(event.request))
-    );
+  // Bypass Vercel insights or external analytics to avoid caching noise
+  if (url.hostname.includes('vercel') || url.hostname.includes('google-analytics')) {
     return;
   }
 
-  // Cache-first with network fallback for images and static media
+  // Stale-While-Revalidate with instant local cache response for high-speed launch
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).then((networkResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -84,7 +70,13 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
+      }).catch(() => {
+        return cachedResponse;
+      });
+
+      // Instant launch: return locally cached file in 0ms if present!
+      // If first-ever launch, wait for network fetch
+      return cachedResponse || fetchPromise;
     })
   );
 });
