@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=18">
+  <link rel="stylesheet" href="app.css?v=19">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -36,6 +36,9 @@
           </div>
         </div>
         <div class="header-actions">
+          <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
+            <span class="theme-icon">🌙</span>
+          </button>
           <button class="btn-icon" id="openUpdateNoticeBtn" title="更新公告" aria-label="更新公告">
             <span style="font-size: 1.05rem;">📢</span>
           </button>
@@ -47,29 +50,28 @@
             <span class="login-key-icon" id="headerLoginKeyIcon">🔑</span>
             <span class="login-btn-label" id="headerLoginBtnText">登录</span>
           </button>
-          <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
-            <span class="theme-icon">🌙</span>
-          </button>
         </div>
       </div>
 
       <!-- Semester & User Status Strip -->
       <div class="semester-strip">
-        <div class="semester-picker-wrapper">
-          <span class="picker-icon">🎓</span>
-          <select id="semesterSelect" class="semester-select">
-            <option value="2026/09" selected>2026/09 (Sep Semester)</option>
-            <option value="2026/04">2026/04 (Apr Semester)</option>
-            <option value="2026/02">2026/02 (Feb Semester)</option>
-            <option value="2027/09">2027/09 (Sep Semester)</option>
-            <option value="2027/04">2027/04 (Apr Semester)</option>
-            <option value="2027/02">2027/02 (Feb Semester)</option>
-          </select>
-        </div>
         <div class="user-greeting" id="userGreeting">
           <span class="online-indicator"></span>
           <span id="studentNameDisplay">Hi, 同学</span>
         </div>
+        <div class="current-semester-badge" id="currentSemesterBadge">
+          <span class="semester-badge-icon">🎓</span>
+          <span id="currentSemesterText">2026/09 学期</span>
+        </div>
+        <!-- Hidden select for script backwards-compatibility -->
+        <select id="semesterSelect" style="display:none;" aria-hidden="true">
+          <option value="2026/09" selected>2026/09 (Sep Semester)</option>
+          <option value="2026/04">2026/04 (Apr Semester)</option>
+          <option value="2026/02">2026/02 (Feb Semester)</option>
+          <option value="2027/09">2027/09 (Sep Semester)</option>
+          <option value="2027/04">2027/04 (Apr Semester)</option>
+          <option value="2027/02">2027/02 (Feb Semester)</option>
+        </select>
       </div>
 
       <!-- Week Selector Slider -->
@@ -615,9 +617,9 @@
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=18"></script>
-  <script src="data/sample_schedule.js?v=18"></script>
-  <script src="app.js?v=18"></script>
+  <script src="data/academic_calendar.js?v=19"></script>
+  <script src="data/sample_schedule.js?v=19"></script>
+  <script src="app.js?v=19"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

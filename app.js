@@ -202,10 +202,20 @@
 
   // 1b. App Release & One-Time Update Notice
   const APP_RELEASE_INFO = {
-    version: 'v1.6.0',
-    title: 'XMUM 课表助手全面升级',
+    version: 'v1.7.0',
+    title: 'XMUM 课表助手新版优化',
     date: '2026-10-15',
     features: [
+      {
+        icon: '🎨',
+        title: '全新极简顶栏与模式切换恒显',
+        desc: '重新排版顶栏布局，深色/浅色模式切换按键恒定置顶展示；精简多余学期下拉，升级为典雅直观的学期徽章。'
+      },
+      {
+        icon: '📜',
+        title: '更新公告与历史记录修复',
+        desc: '彻底修复更新弹窗选项卡切换与多重嵌套滑动卡顿问题，消除手势冲突，历史版本记录顺畅浏览。'
+      },
       {
         icon: '⚡️',
         title: '0ms 闪电秒开与零延迟',
@@ -217,22 +227,22 @@
         desc: '彻底解决手机端作业信息堆叠挤压问题，标题整行展示，课程标签与倒计时一目了然。'
       },
       {
-        icon: '✨',
-        title: '触控折叠控件与更纯净顶栏',
-        desc: 'Moodle 卡片升级为整栏触控胶囊折叠；登录后自动显示已连接学生姓名，移除多余圆点。'
-      },
-      {
-        icon: '📜',
-        title: '支持历史版本记录随时查阅',
-        desc: '更新弹窗新增历史版本时间线，历次更新亮点一键回看。'
-      },
-      {
         icon: '🛡️',
         title: '手机管家清理垃圾防丢数据',
         desc: '启用持久化存储 API 与 IndexedDB 结构化数据库双重防护，清理垃圾绝不丢失课表。'
       }
     ],
     history: [
+      {
+        version: 'v1.6.0',
+        date: '2026-10-15',
+        title: '触控折叠控件与更纯净顶栏',
+        items: [
+          'Moodle 卡片升级为整栏触控胶囊折叠，提升单手操作质感',
+          '右上角登录后自动显示已连接学生姓名，移除冗余绿点',
+          '更新弹窗新增历史版本记录回溯功能'
+        ]
+      },
       {
         version: 'v1.5.0',
         date: '2026-10-15',
@@ -286,6 +296,22 @@
     ]
   };
 
+  function switchNoticeTab(target) {
+    const modalBody = el.updateNoticeModal?.querySelector('.modal-body');
+    if (target === 'history') {
+      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.add('active');
+      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.remove('active');
+      if (el.noticeHistoryView) el.noticeHistoryView.classList.remove('hidden');
+      if (el.noticeCurrentView) el.noticeCurrentView.classList.add('hidden');
+    } else {
+      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.add('active');
+      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.remove('active');
+      if (el.noticeCurrentView) el.noticeCurrentView.classList.remove('hidden');
+      if (el.noticeHistoryView) el.noticeHistoryView.classList.add('hidden');
+    }
+    if (modalBody) modalBody.scrollTop = 0;
+  }
+
   function renderUpdateNoticeModal() {
     if (el.updateNoticeBadge) {
       el.updateNoticeBadge.textContent = `🎉 升级公告 • ${APP_RELEASE_INFO.version}`;
@@ -318,6 +344,7 @@
         </div>
       `).join('');
     }
+    switchNoticeTab('current');
   }
 
   function checkUpdateNotice() {
@@ -1182,6 +1209,11 @@
 
   function updateSemesterInfo() {
     updateTodayBanner();
+    const semText = document.getElementById('currentSemesterText');
+    if (semText) {
+      const sem = state.schedule?.semester || state.currentSemesterId || '2026/09';
+      semText.textContent = `${sem} 学期`;
+    }
   }
 
   function updateTodayBanner() {
@@ -2613,18 +2645,8 @@
     });
 
     // Update Notice Tabs (Current Version vs History)
-    on(el.noticeTabCurrentBtn, 'click', () => {
-      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.add('active');
-      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.remove('active');
-      if (el.noticeCurrentView) el.noticeCurrentView.classList.remove('hidden');
-      if (el.noticeHistoryView) el.noticeHistoryView.classList.add('hidden');
-    });
-    on(el.noticeTabHistoryBtn, 'click', () => {
-      if (el.noticeTabHistoryBtn) el.noticeTabHistoryBtn.classList.add('active');
-      if (el.noticeTabCurrentBtn) el.noticeTabCurrentBtn.classList.remove('active');
-      if (el.noticeHistoryView) el.noticeHistoryView.classList.remove('hidden');
-      if (el.noticeCurrentView) el.noticeCurrentView.classList.add('hidden');
-    });
+    on(el.noticeTabCurrentBtn, 'click', () => switchNoticeTab('current'));
+    on(el.noticeTabHistoryBtn, 'click', () => switchNoticeTab('history'));
 
     // Theme toggle
     on(el.themeToggleBtn, 'click', () => {
