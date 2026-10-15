@@ -17,14 +17,14 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=19">
+  <link rel="stylesheet" href="app.css?v=20">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
   <div class="ios-status-bar-shield" id="statusBarShield"></div>
   <div class="app-container" id="app">
     <!-- Top Navigation / Header -->
-    <header class="app-header">
+    <header class="app-header" id="appHeader">
       <div class="header-main">
         <div class="brand">
           <div class="brand-crest">
@@ -35,26 +35,10 @@
             <h1 class="app-title">Schedule Hub</h1>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="btn-icon" id="themeToggleBtn" title="切换深色/浅色模式" aria-label="切换主题">
-            <span class="theme-icon">🌙</span>
-          </button>
-          <button class="btn-icon" id="openUpdateNoticeBtn" title="更新公告" aria-label="更新公告">
-            <span style="font-size: 1.05rem;">📢</span>
-          </button>
-          <button class="btn-icon" id="recycleBinBtn" title="课程回收站 / 恢复" aria-label="课程回收站">
-            <span class="trash-icon">🗑️</span>
-            <span class="badge-count hidden" id="recycleCountBadge">0</span>
-          </button>
-          <button class="btn-header-login" id="syncModalBtn" title="登录校园账号同步课表与作业" aria-label="登录">
-            <span class="login-key-icon" id="headerLoginKeyIcon">🔑</span>
-            <span class="login-btn-label" id="headerLoginBtnText">登录</span>
-          </button>
-        </div>
       </div>
 
       <!-- Semester & User Status Strip -->
-      <div class="semester-strip">
+      <div class="semester-strip" id="semesterStrip">
         <div class="user-greeting" id="userGreeting">
           <span class="online-indicator"></span>
           <span id="studentNameDisplay">Hi, 同学</span>
@@ -75,7 +59,7 @@
       </div>
 
       <!-- Week Selector Slider -->
-      <div class="week-selector-container">
+      <div class="week-selector-container" id="weekSelectorContainer">
         <button class="week-nav-btn prev" id="prevWeekBtn" aria-label="上一周">‹</button>
         <div class="week-chips-scroll" id="weekChipsContainer">
           <!-- Week chips dynamically injected -->
@@ -222,6 +206,131 @@
           </div>
         </div>
       </section>
+
+      <!-- View: Profile / "我的" 个人中心 -->
+      <section class="view-panel" id="profileView">
+        <div class="profile-container">
+          <!-- Profile User Card -->
+          <div class="profile-hero-card">
+            <div class="profile-hero-main">
+              <div class="profile-avatar-wrap">
+                <span class="profile-avatar-icon" id="profileAvatarIcon">🎓</span>
+                <span class="profile-status-dot online"></span>
+              </div>
+              <div class="profile-user-info">
+                <div class="profile-name-row">
+                  <h2 class="profile-student-name" id="profileStudentName">Hi, 同学</h2>
+                  <span class="profile-sem-tag" id="profileSemesterTag">2026/09 学期</span>
+                </div>
+                <div class="profile-school-sub" id="profileSchoolSub">厦门大学马来西亚分校 • 课表已离线保护</div>
+              </div>
+            </div>
+
+            <!-- Login / Sync Action Button -->
+            <div class="profile-auth-action">
+              <button class="profile-sync-btn" id="profileSyncBtn">
+                <span class="profile-sync-icon" id="profileSyncIcon">🔑</span>
+                <span class="profile-sync-text" id="profileSyncText">登录校园账号同步课表与作业</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: 课表与数据管理 -->
+          <div class="profile-section-card">
+            <div class="profile-section-title">课表与数据管理</div>
+            <div class="profile-menu-list">
+              <button class="profile-menu-item" id="profileRecycleBinBtn">
+                <div class="menu-item-left">
+                  <span class="menu-item-icon">🗑️</span>
+                  <div class="menu-item-text">
+                    <span class="menu-item-name">课程回收站与恢复</span>
+                    <span class="menu-item-desc">找回已删除或单周停课的课程</span>
+                  </div>
+                </div>
+                <div class="menu-item-right">
+                  <span class="profile-badge-count hidden" id="profileRecycleCountBadge">0</span>
+                  <span class="menu-arrow">›</span>
+                </div>
+              </button>
+
+              <button class="profile-menu-item" id="profileClearCacheBtn">
+                <div class="menu-item-left">
+                  <span class="menu-item-icon">🔄</span>
+                  <div class="menu-item-text">
+                    <span class="menu-item-name">重置本地课表</span>
+                    <span class="menu-item-desc">清空当前本地数据，可重新登录同步</span>
+                  </div>
+                </div>
+                <div class="menu-item-right">
+                  <span class="menu-arrow">›</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: 偏好设置与系统 -->
+          <div class="profile-section-card">
+            <div class="profile-section-title">外观与系统设置</div>
+            <div class="profile-menu-list">
+              <!-- Dark / Light mode toggle item -->
+              <div class="profile-menu-item profile-theme-row" id="profileThemeToggleRow">
+                <div class="menu-item-left">
+                  <span class="menu-item-icon" id="profileThemeIcon">🌙</span>
+                  <div class="menu-item-text">
+                    <span class="menu-item-name">外观显示模式</span>
+                    <span class="menu-item-desc" id="profileThemeDesc">当前为：优雅深色学术模式</span>
+                  </div>
+                </div>
+                <div class="menu-item-right">
+                  <button class="profile-theme-switch-btn" id="profileThemeBtn">
+                    <span class="theme-switch-text" id="profileThemeBtnText">切换为浅色 ☀️</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Update Notice & Changelog item -->
+              <button class="profile-menu-item" id="profileUpdateNoticeBtn">
+                <div class="menu-item-left">
+                  <span class="menu-item-icon">📢</span>
+                  <div class="menu-item-text">
+                    <span class="menu-item-name">版本更新公告 & 历史记录</span>
+                    <span class="menu-item-desc">查看最新升级内容与历史版本时间线</span>
+                  </div>
+                </div>
+                <div class="menu-item-right">
+                  <span class="profile-version-pill">v1.7.0</span>
+                  <span class="menu-arrow">›</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: 技术保障与关于 -->
+          <div class="profile-section-card">
+            <div class="profile-section-title">高可用与安全保障</div>
+            <div class="profile-info-grid">
+              <div class="profile-info-tile">
+                <span class="tile-icon">🛡️</span>
+                <div class="tile-text">
+                  <div class="tile-label">离线防丢保障</div>
+                  <div class="tile-val">IndexedDB + 本地保险箱已激活</div>
+                </div>
+              </div>
+              <div class="profile-info-tile">
+                <span class="tile-icon">⚡️</span>
+                <div class="tile-text">
+                  <div class="tile-label">秒开极速缓存</div>
+                  <div class="tile-val">Service Worker 运作中</div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-app-meta">
+              <span>XMUM Schedule Hub • 马校同学专属课表通</span>
+              <span class="profile-copyright">Designed with ❤️ for Xiamen University Malaysia</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   </div><!-- /app-container -->
 
@@ -238,6 +347,10 @@
       <button class="nav-item" data-view="calendarOverviewView" id="navCalendar">
         <span class="nav-icon">🗓️</span>
         <span class="nav-label">全景校历</span>
+      </button>
+      <button class="nav-item" data-view="profileView" id="navProfile">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">我的</span>
       </button>
     </nav>
 
@@ -615,11 +728,18 @@
     <button id="exportIcsBtn" style="display:none;" aria-hidden="true"></button>
     <button id="loadDemoBtn" style="display:none;" aria-hidden="true"></button>
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
+    <button id="themeToggleBtn" style="display:none;" aria-hidden="true"><span class="theme-icon">🌙</span></button>
+    <button id="openUpdateNoticeBtn" style="display:none;" aria-hidden="true"></button>
+    <button id="recycleBinBtn" style="display:none;" aria-hidden="true"></button>
+    <span id="recycleCountBadge" style="display:none;" aria-hidden="true"></span>
+    <button id="syncModalBtn" style="display:none;" aria-hidden="true"></button>
+    <span id="headerLoginKeyIcon" style="display:none;" aria-hidden="true"></span>
+    <span id="headerLoginBtnText" style="display:none;" aria-hidden="true"></span>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=19"></script>
-  <script src="data/sample_schedule.js?v=19"></script>
-  <script src="app.js?v=19"></script>
+  <script src="data/academic_calendar.js?v=20"></script>
+  <script src="data/sample_schedule.js?v=20"></script>
+  <script src="app.js?v=20"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

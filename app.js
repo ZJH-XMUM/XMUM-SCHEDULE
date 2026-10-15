@@ -202,29 +202,29 @@
 
   // 1b. App Release & One-Time Update Notice
   const APP_RELEASE_INFO = {
-    version: 'v1.7.0',
-    title: 'XMUM 课表助手新版优化',
+    version: 'v1.8.0',
+    title: 'XMUM 课表助手全面改版 • 推出【我的】个人中心',
     date: '2026-10-15',
     features: [
       {
-        icon: '🎨',
-        title: '全新极简顶栏与模式切换恒显',
-        desc: '重新排版顶栏布局，深色/浅色模式切换按键恒定置顶展示；精简多余学期下拉，升级为典雅直观的学期徽章。'
+        icon: '👤',
+        title: '新增底部【我的】专属个人中心',
+        desc: '深浅色模式切换、课程回收站、更新公告及校园账号同步统一整合，主界面不再拥挤，操作一触即达。'
       },
       {
-        icon: '📜',
-        title: '更新公告与历史记录修复',
-        desc: '彻底修复更新弹窗选项卡切换与多重嵌套滑动卡顿问题，消除手势冲突，历史版本记录顺畅浏览。'
+        icon: '✨',
+        title: '顶栏彻底告别拥挤堆叠',
+        desc: '移除顶栏原先堆叠的 4 个小按钮，顶栏视野大幅舒展，在课表浏览模式下更显通透典雅。'
+      },
+      {
+        icon: '📱',
+        title: '智能卡片动态感知',
+        desc: '切换到【我的】页面时自动收起上方的排课与倒计时卡片，呈现专注于个人设置的沉浸式界面。'
       },
       {
         icon: '⚡️',
         title: '0ms 闪电秒开与零延迟',
         desc: '底层重构离线缓存导航，首次打开后每次启动均为 0ms 瞬间秒开展现，告别卡顿与加载延迟。'
-      },
-      {
-        icon: '📱',
-        title: '作业任务卡片全屏舒展重构',
-        desc: '彻底解决手机端作业信息堆叠挤压问题，标题整行展示，课程标签与倒计时一目了然。'
       },
       {
         icon: '🛡️',
@@ -233,6 +233,16 @@
       }
     ],
     history: [
+      {
+        version: 'v1.7.0',
+        date: '2026-10-15',
+        title: '全新极简顶栏与模式切换恒显',
+        items: [
+          '重新排版顶栏布局，深浅色切换按键恒显，精简多余学期下拉',
+          '修复更新公告选项卡切换与手势滑动冲突',
+          '单层平滑手势滚动优化'
+        ]
+      },
       {
         version: 'v1.6.0',
         date: '2026-10-15',
@@ -1128,6 +1138,17 @@
     }
     const metaTheme = document.getElementById('metaThemeColor');
     if (metaTheme) metaTheme.content = (theme === 'light') ? '#f0f4f8' : '#0b1120';
+    updateProfileThemeUI();
+  }
+
+  function updateProfileThemeUI() {
+    const isDark = (state.theme === 'dark');
+    const themeIcon = document.getElementById('profileThemeIcon');
+    const themeDesc = document.getElementById('profileThemeDesc');
+    const themeBtnText = document.getElementById('profileThemeBtnText');
+    if (themeIcon) themeIcon.textContent = isDark ? '🌙' : '☀️';
+    if (themeDesc) themeDesc.textContent = isDark ? '当前为：优雅深色学术模式' : '当前为：明亮清新浅色模式';
+    if (themeBtnText) themeBtnText.textContent = isDark ? '切换为浅色 ☀️' : '切换为深色 🌙';
   }
 
   // 4. Academic Calendar Helpers
@@ -1962,11 +1983,27 @@
   function switchView(viewName) {
     state.activeView = viewName;
     document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(viewName).classList.add('active');
+    const targetPanel = document.getElementById(viewName);
+    if (targetPanel) targetPanel.classList.add('active');
 
     el.navItems.forEach(n => {
       n.classList.toggle('active', n.dataset.view === viewName);
     });
+
+    // Control visibility of top schedule cards:
+    // When in 'profileView', hide todayBanner, semesterStrip, and weekSelectorContainer
+    const isProfile = (viewName === 'profileView');
+    const todayBanner = document.getElementById('todayBanner');
+    const semesterStrip = document.getElementById('semesterStrip');
+    const weekSelector = document.getElementById('weekSelectorContainer');
+    const appHeader = document.getElementById('appHeader');
+
+    if (todayBanner) todayBanner.classList.toggle('hidden', isProfile);
+    if (semesterStrip) semesterStrip.classList.toggle('hidden', isProfile);
+    if (weekSelector) weekSelector.classList.toggle('hidden', isProfile);
+    if (appHeader) appHeader.classList.toggle('in-profile-view', isProfile);
+
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     renderView();
   }
@@ -1979,7 +2016,48 @@
     } else if (state.activeView === 'calendarOverviewView') {
       renderAcademicCalendar();
       renderCalendarMilestones();
+    } else if (state.activeView === 'profileView') {
+      renderProfileView();
     }
+  }
+
+  function renderProfileView() {
+    const studentNameEl = document.getElementById('profileStudentName');
+    const semTagEl = document.getElementById('profileSemesterTag');
+    const syncTextEl = document.getElementById('profileSyncText');
+    const syncIconEl = document.getElementById('profileSyncIcon');
+    const syncBtn = document.getElementById('profileSyncBtn');
+    const avatarIcon = document.getElementById('profileAvatarIcon');
+
+    const hasCourses = state.schedule && state.schedule.courses && state.schedule.courses.length > 0;
+    const studentName = state.schedule?.studentName;
+    const hasName = studentName && studentName !== '同学';
+    const sem = state.schedule?.semester || state.currentSemesterId || '2026/09';
+
+    if (studentNameEl) {
+      studentNameEl.textContent = hasName ? `Hi, ${studentName}` : 'Hi, 同学';
+    }
+    if (semTagEl) {
+      semTagEl.textContent = `${sem} 学期`;
+    }
+    if (avatarIcon) {
+      avatarIcon.textContent = hasName ? '👨‍🎓' : '🎓';
+    }
+
+    if (syncTextEl && syncBtn) {
+      if (hasCourses || hasName) {
+        syncTextEl.textContent = `已连接: ${studentName || '本地课表'} (点击重新同步或切换)`;
+        if (syncIconEl) syncIconEl.textContent = '🔄';
+        syncBtn.classList.add('is-synced');
+      } else {
+        syncTextEl.textContent = '登录校园账号同步课表与作业';
+        if (syncIconEl) syncIconEl.textContent = '🔑';
+        syncBtn.classList.remove('is-synced');
+      }
+    }
+
+    updateRecycleCountBadge();
+    updateProfileThemeUI();
   }
 
   // Helper: Calculate start and end time based on startSlot and slotSpan
@@ -2187,13 +2265,24 @@
   }
 
   function updateRecycleCountBadge() {
-    if (!el.recycleCountBadge) return;
     const deletedCount = (state.schedule?.deletedCourses || []).length;
-    if (deletedCount > 0) {
-      el.recycleCountBadge.textContent = deletedCount > 9 ? '9+' : deletedCount;
-      el.recycleCountBadge.classList.remove('hidden');
-    } else {
-      el.recycleCountBadge.classList.add('hidden');
+    const countStr = deletedCount > 9 ? '9+' : String(deletedCount);
+    if (el.recycleCountBadge) {
+      if (deletedCount > 0) {
+        el.recycleCountBadge.textContent = countStr;
+        el.recycleCountBadge.classList.remove('hidden');
+      } else {
+        el.recycleCountBadge.classList.add('hidden');
+      }
+    }
+    const profileBadge = document.getElementById('profileRecycleCountBadge');
+    if (profileBadge) {
+      if (deletedCount > 0) {
+        profileBadge.textContent = countStr;
+        profileBadge.classList.remove('hidden');
+      } else {
+        profileBadge.classList.add('hidden');
+      }
     }
   }
 
@@ -2648,9 +2737,43 @@
     on(el.noticeTabCurrentBtn, 'click', () => switchNoticeTab('current'));
     on(el.noticeTabHistoryBtn, 'click', () => switchNoticeTab('history'));
 
-    // Theme toggle
+    // Theme toggle (both old button & profile)
     on(el.themeToggleBtn, 'click', () => {
       applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    // Profile ("我的") View Handlers
+    on(document.getElementById('profileSyncBtn'), 'click', () => openModal(el.syncModal));
+    on(document.getElementById('profileRecycleBinBtn'), 'click', () => {
+      renderRecycleBin();
+      openModal(el.recycleBinModal);
+    });
+    on(document.getElementById('profileThemeBtn'), 'click', () => {
+      applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+    });
+    on(document.getElementById('profileThemeToggleRow'), 'click', (e) => {
+      if (e.target.closest('#profileThemeBtn')) return;
+      applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+    });
+    on(document.getElementById('profileUpdateNoticeBtn'), 'click', () => {
+      renderUpdateNoticeModal();
+      switchNoticeTab('current');
+      openModal(el.updateNoticeModal);
+    });
+    on(document.getElementById('profileClearCacheBtn'), 'click', () => {
+      if (confirm('确定要重置本地课表数据吗？\n重置后将清除当前本地课表，您可以重新登录校园账号同步。')) {
+        localStorage.removeItem('xmum_schedule_data');
+        IDBVault.delete('xmum_schedule_data');
+        state.schedule = null;
+        if (el.studentNameDisplay) el.studentNameDisplay.textContent = 'Hi, 同学';
+        renderView();
+        updateNextClassCard();
+        updateRecycleCountBadge();
+        updateHeaderLoginState();
+        renderProfileView();
+        showToast('已重置本地课表');
+        setTimeout(() => openModal(el.syncModal), 400);
+      }
     });
 
     // Semester switcher
