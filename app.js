@@ -210,34 +210,14 @@
       state.schedule = JSON.parse(JSON.stringify(emptySchedule));
     }
 
-    // Clean up mock placeholder courses from both deleted list and active list
-    const mockIds = new Set(['CST310-1', 'SWE305-1', 'MKT201-1']);
-    const mockCodes = new Set(['CST310*', 'SWE305*', 'MKT201*', 'CST310', 'SWE305', 'MKT201']);
-
-    let changed = false;
-    if (state.schedule.courses && Array.isArray(state.schedule.courses)) {
-      const origCount = state.schedule.courses.length;
-      state.schedule.courses = state.schedule.courses.filter(c => 
-        !mockIds.has(c.id) && !mockCodes.has(c.code)
-      );
-      if (state.schedule.courses.length !== origCount) changed = true;
+    if (!state.schedule.courses || !Array.isArray(state.schedule.courses)) {
+      state.schedule.courses = [];
     }
-
-    if (!state.schedule.deletedCourses) {
+    if (!state.schedule.deletedCourses || !Array.isArray(state.schedule.deletedCourses)) {
       state.schedule.deletedCourses = [];
-    } else {
-      const beforeLen = state.schedule.deletedCourses.length;
-      state.schedule.deletedCourses = state.schedule.deletedCourses.filter(d => 
-        !d.isMissingDefault && 
-        !mockIds.has(d.id) && 
-        !mockIds.has(d.courseId) &&
-        !mockCodes.has(d.code)
-      );
-      if (beforeLen !== state.schedule.deletedCourses.length) changed = true;
     }
-
-    if (changed) {
-      saveSchedule();
+    if (!state.schedule.rescheduledCourses) {
+      state.schedule.rescheduledCourses = {};
     }
 
     if (state.schedule && state.schedule.studentName) {
@@ -2168,53 +2148,69 @@
 
           const dayInfo = dayIndices[cPointer];
           const cellText = cell.innerText || cell.textContent || '';
-          const lines = cellText.split('\n').map(l => l.trim()).filter(Boolean);
+          const rawLines = cellText.split('\n').map(l => l.trim()).filter(Boolean);
 
-          if (dayInfo && lines.length >= 1) {
-            const code = lines[0] || 'COURSE';
-            const name = lines[1] || code;
-            const instructor = lines[2] || 'Lecturer';
-            const location = lines[3] || 'TBA';
-            let weeksStr = lines[4] || '(Week 1–14)';
-            for (const l of lines) {
-              if (l.toLowerCase().includes('week') || l.toLowerCase().includes('wk')) {
-                weeksStr = l;
-                break;
+          if (dayInfo && rawLines.length >= 1) {
+            // Split cell into distinct course blocks if multiple courses share this time slot
+            const codePattern = /^[A-Za-z]{2,5}\s*\d{3,4}[A-Za-z]?$/;
+            const blocks = [];
+            let currentBlock = [];
+            for (const line of rawLines) {
+              if (codePattern.test(line) && currentBlock.length > 0) {
+                blocks.push(currentBlock);
+                currentBlock = [line];
+              } else {
+                currentBlock.push(line);
               }
             }
-
-            const cleanWeeks = weeksStr.replace(/[^\d,\-–]/g, '');
-            const weekSet = new Set();
-            cleanWeeks.split(',').forEach(part => {
-              const range = part.split(/[\-–]/);
-              if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
-                for (let w = parseInt(range[0]); w <= parseInt(range[1]); w++) weekSet.add(w);
-              } else if (!isNaN(part) && part) {
-                weekSet.add(parseInt(part));
-              }
-            });
-            const weeks = weekSet.size ? Array.from(weekSet).sort((a,b) => a-b) : [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+            if (currentBlock.length > 0) blocks.push(currentBlock);
 
             const startSlot = rIdx;
             const slotSpan = rowspan;
             const slotDefStart = TIME_SLOTS_DEF[startSlot - 1] || TIME_SLOTS_DEF[0];
             const slotDefEnd = TIME_SLOTS_DEF[Math.min(startSlot + slotSpan - 2, TIME_SLOTS_DEF.length - 1)] || slotDefStart;
 
-            courses.push({
-              id: `${code}-${dayInfo.dayNum}-${startSlot}`,
-              code,
-              name,
-              instructor,
-              location,
-              dayOfWeek: dayInfo.dayNum,
-              dayName: dayInfo.dayName,
-              startTime: slotDefStart.start,
-              endTime: slotDefEnd.end,
-              startSlot,
-              slotSpan,
-              weeks,
-              weeksText: weeksStr,
-              colorTag: colors[courses.length % colors.length]
+            blocks.forEach((lines, bIdx) => {
+              const code = lines[0] || 'COURSE';
+              const name = lines[1] || code;
+              const instructor = lines[2] || 'Lecturer';
+              const location = lines[3] || 'TBA';
+              let weeksStr = '(Week 1–14)';
+              for (const l of lines) {
+                if (l.toLowerCase().includes('week') || l.toLowerCase().includes('wk') || l.includes('周')) {
+                  weeksStr = l;
+                  break;
+                }
+              }
+
+              const normalizedWeeks = weeksStr.replace(/[—–~～至to\s]+/g, '-').replace(/[^\d,\-]/g, '');
+              const weekSet = new Set();
+              normalizedWeeks.split(',').forEach(part => {
+                const range = part.split('-');
+                if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
+                  for (let w = parseInt(range[0]); w <= parseInt(range[1]); w++) weekSet.add(w);
+                } else if (!isNaN(part) && part) {
+                  weekSet.add(parseInt(part));
+                }
+              });
+              const weeks = weekSet.size ? Array.from(weekSet).sort((a,b) => a-b) : [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+
+              courses.push({
+                id: `${code}-${dayInfo.dayNum}-${startSlot}-${bIdx}`,
+                code,
+                name,
+                instructor,
+                location,
+                dayOfWeek: dayInfo.dayNum,
+                dayName: dayInfo.dayName,
+                startTime: slotDefStart.start,
+                endTime: slotDefEnd.end,
+                startSlot,
+                slotSpan,
+                weeks,
+                weeksText: weeksStr,
+                colorTag: colors[courses.length % colors.length]
+              });
             });
           }
 

@@ -36,16 +36,19 @@ COLOR_PALETTE = [
 
 def parse_week_string(week_str):
     """
-    Parses strings like '(Week 1–14)', 'Week 1-7, 9-14', '1-14周' into a list of integers.
+    Parses strings like '(Week 1–14)', 'Week 1-7, 9-14', '1-14周', 'Week 1~8' into a list of integers.
     """
-    clean = re.sub(r'[^\d,\-–]', '', week_str)
+    if not week_str:
+        return list(range(1, 15))
+    normalized = re.sub(r'[—–~～至to\s]+', '-', str(week_str))
+    clean = re.sub(r'[^\d,\-]', '', normalized)
     weeks = set()
     parts = clean.split(',')
     for part in parts:
         part = part.strip()
         if not part:
             continue
-        range_match = re.split(r'[\-–]', part)
+        range_match = part.split('-')
         if len(range_match) == 2 and range_match[0].isdigit() and range_match[1].isdigit():
             start, end = int(range_match[0]), int(range_match[1])
             for w in range(start, end + 1):
@@ -120,44 +123,56 @@ def parse_timetable_html(html_content):
             
             if day_info and cell_text and len(cell_text) > 3:
                 day_num, day_name = day_info
-                lines = [l.strip() for l in cell_text.split("\n") if l.strip()]
+                raw_lines = [l.strip() for l in cell_text.split("\n") if l.strip()]
                 
-                # Minimum course cell info: code, name, instructor, room, weeks
-                code = lines[0] if len(lines) > 0 else "COURSE"
-                name = lines[1] if len(lines) > 1 else code
-                instructor = lines[2] if len(lines) > 2 else "Lecturer"
-                location = lines[3] if len(lines) > 3 else "TBA"
-                weeks_str = lines[4] if len(lines) > 4 else "(Week 1–14)"
-                
-                # Check for week pattern across lines
-                for l in lines:
-                    if "week" in l.lower() or "wk" in l.lower():
-                        weeks_str = l
-                        break
-                        
+                # Split cell into distinct course blocks if multiple courses share this time slot
+                code_pattern = re.compile(r'^[A-Za-z]{2,5}\s*\d{3,4}[A-Za-z]?$')
+                blocks = []
+                current_block = []
+                for line in raw_lines:
+                    if code_pattern.match(line) and current_block:
+                        blocks.append(current_block)
+                        current_block = [line]
+                    else:
+                        current_block.append(line)
+                if current_block:
+                    blocks.append(current_block)
+
                 start_slot_idx = r_idx - 1
                 slot_info = TIME_SLOTS[start_slot_idx] if start_slot_idx < len(TIME_SLOTS) else TIME_SLOTS[0]
                 end_slot_idx = min(start_slot_idx + rowspan - 1, len(TIME_SLOTS) - 1)
                 end_slot_info = TIME_SLOTS[end_slot_idx]
-                
-                course_obj = {
-                    "id": f"{code}-{day_num}-{r_idx}",
-                    "code": code,
-                    "name": name,
-                    "instructor": instructor,
-                    "location": location,
-                    "dayOfWeek": day_num,
-                    "dayName": day_name,
-                    "startTime": slot_info["start"],
-                    "endTime": end_slot_info["end"],
-                    "startSlot": r_idx,
-                    "slotSpan": rowspan,
-                    "weeks": parse_week_string(weeks_str),
-                    "weeksText": weeks_str,
-                    "colorTag": COLOR_PALETTE[color_idx % len(COLOR_PALETTE)]
-                }
-                courses.append(course_obj)
-                color_idx += 1
+
+                for b_idx, lines in enumerate(blocks):
+                    code = lines[0] if len(lines) > 0 else "COURSE"
+                    name = lines[1] if len(lines) > 1 else code
+                    instructor = lines[2] if len(lines) > 2 else "Lecturer"
+                    location = lines[3] if len(lines) > 3 else "TBA"
+                    weeks_str = "(Week 1–14)"
+                    
+                    for l in lines:
+                        if "week" in l.lower() or "wk" in l.lower() or "周" in l:
+                            weeks_str = l
+                            break
+                    
+                    course_obj = {
+                        "id": f"{code}-{day_num}-{r_idx}-{b_idx}",
+                        "code": code,
+                        "name": name,
+                        "instructor": instructor,
+                        "location": location,
+                        "dayOfWeek": day_num,
+                        "dayName": day_name,
+                        "startTime": slot_info["start"],
+                        "endTime": end_slot_info["end"],
+                        "startSlot": r_idx,
+                        "slotSpan": rowspan,
+                        "weeks": parse_week_string(weeks_str),
+                        "weeksText": weeks_str,
+                        "colorTag": COLOR_PALETTE[color_idx % len(COLOR_PALETTE)]
+                    }
+                    courses.append(course_obj)
+                    color_idx += 1
                 
             c_pointer += colspan
 
