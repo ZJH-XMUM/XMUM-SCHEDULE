@@ -1,5 +1,6 @@
-const CACHE_NAME = 'xmum-schedule-v16';
+const CACHE_NAME = 'xmum-schedule-v17';
 const ASSETS_TO_CACHE = [
+  '/',
   './',
   'index.html',
   'app.css',
@@ -17,7 +18,11 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) =>
+          cache.add(url).catch((err) => console.warn('[SW] Cache add skipped for:', url, err))
+        )
+      );
     }).then(() => self.skipWaiting())
   );
 });
@@ -42,11 +47,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Dynamic API routes: Network-only with friendly offline error
+  // Dynamic API routes: Network-first with friendly offline fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ success: false, error: "网络无法连通：请检查手机网络状态" }), {
+        return new Response(JSON.stringify({ success: false, error: "网络无法连通：请检查手机网络状态", offline: true }), {
           headers: { 'Content-Type': 'application/json' }
         });
       })
@@ -54,12 +59,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Bypass Vercel insights or external analytics to avoid caching noise
+  // Bypass external analytics to avoid caching noise
   if (url.hostname.includes('vercel') || url.hostname.includes('google-analytics')) {
     return;
   }
 
-  // Stale-While-Revalidate with instant local cache response for high-speed launch
+  // 1. Navigation Request (User visits root domain, reloads page, or opens PWA app icon)
+  // MUST return index.html in 0ms directly from cache for zero latency!
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('index.html', { ignoreSearch: true }).then((cachedIndex) => {
+        const networkFetch = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('index.html', responseToCache);
+              cache.put('/', responseToCache.clone());
+            });
+          }
+          return networkResponse;
+        }).catch(() => cachedIndex);
+
+        // Instant launch from cache; if first-ever launch, use network
+        return cachedIndex || networkFetch;
+      })
+    );
+    return;
+  }
+
+  // 2. Static Resources (CSS, JS, Fonts, Images)
+  // Stale-While-Revalidate with instant local cache response
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -75,7 +104,6 @@ self.addEventListener('fetch', (event) => {
       });
 
       // Instant launch: return locally cached file in 0ms if present!
-      // If first-ever launch, wait for network fetch
       return cachedResponse || fetchPromise;
     })
   );

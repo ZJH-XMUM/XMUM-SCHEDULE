@@ -17,21 +17,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <!-- Google Fonts: Asynchronous high-speed load with native PingFang fallback -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
-  <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-  </noscript>
-  <link rel="stylesheet" href="app.css?v=16">
-  <!-- Vercel Web Analytics & Insights -->
-  <script>
-    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
+  <link rel="stylesheet" href="app.css?v=17">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -617,9 +603,17 @@
     <button id="loadDemoBtn" style="display:none;" aria-hidden="true"></button>
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
 
-  <!-- Scripts -->
-  <script src="data/academic_calendar.js?v=16"></script>
-  <script src="data/sample_schedule.js?v=16"></script>
-  <script src="app.js?v=16"></script>
+  <!-- Core App Scripts -->
+  <script src="data/academic_calendar.js?v=17"></script>
+  <script src="data/sample_schedule.js?v=17"></script>
+  <script src="app.js?v=17"></script>
+
+  <!-- Non-blocking Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>
