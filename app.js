@@ -130,7 +130,15 @@
     moodleStatusMsg: document.getElementById('moodleStatusMsg'),
     loadDemoDeadlinesBtn: document.getElementById('loadDemoDeadlinesBtn'),
     clearDeadlinesBtn: document.getElementById('clearDeadlinesBtn'),
-    navItems: document.querySelectorAll('.bottom-nav .nav-item')
+    navItems: document.querySelectorAll('.bottom-nav .nav-item'),
+    openUpdateNoticeBtn: document.getElementById('openUpdateNoticeBtn'),
+    updateNoticeModal: document.getElementById('updateNoticeModal'),
+    updateNoticeBadge: document.getElementById('updateNoticeBadge'),
+    updateNoticeTitle: document.getElementById('updateNoticeTitle'),
+    updateNoticeDesc: document.getElementById('updateNoticeDesc'),
+    updateFeaturesList: document.getElementById('updateFeaturesList'),
+    closeUpdateNoticeBtn: document.getElementById('closeUpdateNoticeBtn'),
+    confirmUpdateNoticeBtn: document.getElementById('confirmUpdateNoticeBtn')
   };
 
   // Modal Helpers with Mobile Scroll-Lock
@@ -168,6 +176,7 @@
       renderCalendarMilestones();
       renderAcademicCalendar();
       updateRecycleCountBadge();
+      checkUpdateNotice();
     } catch (err) {
       console.error('Core init error:', err);
     }
@@ -180,6 +189,74 @@
         });
       });
     }
+  }
+
+  // 1b. App Release & One-Time Update Notice
+  const APP_RELEASE_INFO = {
+    version: 'v1.4.0',
+    title: 'XMUM 课表助手新版上线',
+    date: '2026-10-15',
+    features: [
+      {
+        icon: '⚡️',
+        title: '实时课程动态追踪',
+        desc: '横幅智能感知当前时间，自动展示【上课中 / 距下课倒计时 / 下一节课】，下课后自动无缝切换。'
+      },
+      {
+        icon: '🛡️',
+        title: '课程防丢与持久化加固',
+        desc: '彻底修复部分课程重启或切屏后被误清空的异常；全面升级支持半学期课程与复杂周次（如 1~8 周）智能解析。'
+      },
+      {
+        icon: '🚀',
+        title: '一键极速登录同步',
+        desc: '仅需一次输入校园账号密码，即可同步 AC 教学排课与 Moodle 作业 DDL 截止时间，作业一目了然。'
+      },
+      {
+        icon: '📱',
+        title: '界面更清爽更聚焦',
+        desc: '移除了冗余演示按钮与选项，弹窗及看板适配移动端手势与屏幕比例。'
+      }
+    ]
+  };
+
+  function renderUpdateNoticeModal() {
+    if (el.updateNoticeBadge) {
+      el.updateNoticeBadge.textContent = `🎉 升级公告 • ${APP_RELEASE_INFO.version}`;
+    }
+    if (el.updateNoticeTitle) {
+      el.updateNoticeTitle.textContent = APP_RELEASE_INFO.title;
+    }
+    if (el.updateFeaturesList) {
+      el.updateFeaturesList.innerHTML = APP_RELEASE_INFO.features.map(f => `
+        <div class="update-feature-item">
+          <span class="update-feature-icon">${f.icon}</span>
+          <div class="update-feature-content">
+            <div class="update-feature-title">${f.title}</div>
+            <div class="update-feature-desc">${f.desc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  function checkUpdateNotice() {
+    try {
+      const lastSeen = localStorage.getItem('xmum_last_seen_version');
+      if (lastSeen !== APP_RELEASE_INFO.version) {
+        renderUpdateNoticeModal();
+        openModal(el.updateNoticeModal);
+      }
+    } catch (e) {
+      console.warn('Could not check update notice version:', e);
+    }
+  }
+
+  function dismissUpdateNotice() {
+    try {
+      localStorage.setItem('xmum_last_seen_version', APP_RELEASE_INFO.version);
+    } catch (e) {}
+    closeModal(el.updateNoticeModal);
   }
 
   // 2. Storage & State Management
@@ -2284,6 +2361,17 @@
     on(el.closeSyncModalBtn, 'click', () => closeModal(el.syncModal));
     on(el.syncModal, 'click', (e) => {
       if (e.target === el.syncModal) closeModal(el.syncModal);
+    });
+
+    // Update Notice Modal handlers
+    on(el.openUpdateNoticeBtn, 'click', () => {
+      renderUpdateNoticeModal();
+      openModal(el.updateNoticeModal);
+    });
+    on(el.closeUpdateNoticeBtn, 'click', dismissUpdateNotice);
+    on(el.confirmUpdateNoticeBtn, 'click', dismissUpdateNotice);
+    on(el.updateNoticeModal, 'click', (e) => {
+      if (e.target === el.updateNoticeModal) dismissUpdateNotice();
     });
 
     // Theme toggle

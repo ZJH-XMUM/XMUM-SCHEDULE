@@ -2778,6 +2778,78 @@ body.theme-light .reschedule-time-preview .preview-value {
   }
 }
 
+/* Release / Update Notice Modal */
+.update-notice-card {
+  max-width: 440px;
+}
 
+.version-badge {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  font-weight: 700;
+}
 
+.update-notice-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
 
+.update-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
+}
+
+.update-feature-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+body.theme-light .update-feature-item {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.update-feature-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+body.theme-light .update-feature-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.update-feature-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.update-feature-content {
+  flex: 1;
+}
+
+.update-feature-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 3px;
+}
+
+.update-feature-desc {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}

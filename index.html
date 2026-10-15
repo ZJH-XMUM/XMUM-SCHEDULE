@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=14">
+  <link rel="stylesheet" href="app.css?v=15">
   <!-- Vercel Web Analytics & Insights -->
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -47,6 +47,9 @@
           </div>
         </div>
         <div class="header-actions">
+          <button class="btn-icon" id="openUpdateNoticeBtn" title="更新公告" aria-label="更新公告">
+            <span style="font-size: 1.05rem;">📢</span>
+          </button>
           <button class="btn-icon" id="recycleBinBtn" title="课程回收站 / 恢复" aria-label="课程回收站">
             <span class="trash-icon">🗑️</span>
             <span class="badge-count hidden" id="recycleCountBadge">0</span>
@@ -580,6 +583,30 @@
       </div>
     </div>
 
+    <!-- Modal: Release / Update Notice (一次性更新公告) -->
+    <div class="modal-backdrop" id="updateNoticeModal">
+      <div class="modal-card update-notice-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge version-badge" id="updateNoticeBadge">🎉 升级公告 • v1.4.0</span>
+            <h3 class="modal-title" id="updateNoticeTitle">XMUM 课表助手新版上线</h3>
+          </div>
+          <button class="btn-close" id="closeUpdateNoticeBtn">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="update-notice-desc" id="updateNoticeDesc">感谢使用 XMUM 课表助手！本次更新带来了以下重要改进：</p>
+          <div class="update-features-list" id="updateFeaturesList">
+            <!-- Dynamically populated from APP_RELEASE_INFO -->
+          </div>
+          <div class="update-notice-footer" style="margin-top: 18px;">
+            <button class="btn-primary full-width" id="confirmUpdateNoticeBtn">
+              <span class="btn-text">我知道了，立即体验 ✨</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast-message" id="toastMessage"></div>
 
@@ -590,8 +617,8 @@
     <button id="recycleBinPillBtn" style="display:none;" aria-hidden="true"></button>
 
   <!-- Scripts -->
-  <script src="data/academic_calendar.js?v=14"></script>
-  <script src="data/sample_schedule.js?v=14"></script>
-  <script src="app.js?v=14"></script>
+  <script src="data/academic_calendar.js?v=15"></script>
+  <script src="data/sample_schedule.js?v=15"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
