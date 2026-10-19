@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v25';
+const CACHE_NAME = 'xmum-schedule-v26';
 const ASSETS_TO_CACHE = [
   '/',
   './',
@@ -78,16 +78,16 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        return caches.match('index.html', { ignoreSearch: true });
+        return caches.match('index.html');
       })
     );
     return;
   }
 
   // 2. Static Resources (CSS, JS, Fonts, Images)
-  // Stale-While-Revalidate with instant local cache response
+  // Exact match with version query; if query changes (?v=26), fetches fresh asset from network!
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+    caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
@@ -100,7 +100,7 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       });
 
-      // Instant launch: return locally cached file in 0ms if present!
+      // If cached with exact version, return cached; otherwise use fresh network fetch
       return cachedResponse || fetchPromise;
     })
   );
