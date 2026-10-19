@@ -241,7 +241,7 @@
         version: 'v1.8.0',
         title: 'XMUM 课表助手全面改版 • 推出【我的】个人中心',
         date: '2026-10-15',
-        highlights: [
+        items: [
           '新增底部【我的】专属个人中心，深浅色/回收站/公告一站式管理',
           '顶栏告别拥挤堆叠，视界通透舒展',
           '离线秒开优化与防误删持久化防护'
@@ -363,7 +363,7 @@
           </div>
           <div class="history-version-title">${h.title}</div>
           <ul class="history-items-list">
-            ${h.items.map(item => `<li>${item}</li>`).join('')}
+            ${(h.items || h.highlights || []).map(item => `<li>${item}</li>`).join('')}
           </ul>
         </div>
       `).join('');
