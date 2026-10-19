@@ -19,7 +19,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=27">
+  <link rel="stylesheet" href="app.css?v=28">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -109,7 +109,6 @@
           </div>
           <div class="grid-actions">
             <button class="btn-pill" id="todayJumpBtn">回到今天</button>
-            <button class="btn-pill secondary" id="toggleDaysBtn">📅 完整7天</button>
           </div>
         </div>
 
@@ -313,10 +312,35 @@
                 </div>
               </div>
             </div>
-            <div class="profile-app-meta">
-              <span>XMUM Schedule Hub • 马校同学专属课表通</span>
-              <span class="profile-copyright">Designed with ❤️ for Xiamen University Malaysia</span>
+          </div>
+
+          <!-- Section: 开发者联系与问题反馈 -->
+          <div class="profile-section-card contact-section-card">
+            <div class="profile-section-title">开发者联系与问题反馈</div>
+            <div class="contact-card-list">
+              <div class="contact-item" id="copyWeChatBtn" role="button" title="点击复制微信号">
+                <div class="contact-item-left">
+                  <span class="contact-icon wechat-icon">💬</span>
+                  <div class="contact-info">
+                    <span class="contact-name">微信 WeChat</span>
+                    <span class="contact-val" id="weChatVal">Z13028667069</span>
+                  </div>
+                </div>
+                <button class="contact-copy-badge" aria-label="复制微信号">复制</button>
+              </div>
+
+              <div class="contact-item" id="copyQQBtn" role="button" title="点击复制QQ号">
+                <div class="contact-item-left">
+                  <span class="contact-icon qq-icon">🐧</span>
+                  <div class="contact-info">
+                    <span class="contact-name">QQ 联系</span>
+                    <span class="contact-val" id="qqVal">3120038729</span>
+                  </div>
+                </div>
+                <button class="contact-copy-badge" aria-label="复制QQ号">复制</button>
+              </div>
             </div>
+            <div class="contact-footer-tip">欢迎添加微信或 QQ 提出新功能建议、反馈课表 Bug 或交流交流校园生活 😊</div>
           </div>
         </div>
       </section>
@@ -726,9 +750,9 @@
     <span id="headerLoginBtnText" style="display:none;" aria-hidden="true"></span>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=27"></script>
-  <script src="data/sample_schedule.js?v=27"></script>
-  <script src="app.js?v=27"></script>
+  <script src="data/academic_calendar.js?v=28"></script>
+  <script src="data/sample_schedule.js?v=28"></script>
+  <script src="app.js?v=28"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

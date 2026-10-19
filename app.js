@@ -104,7 +104,6 @@
     closeRecycleModalBtn: document.getElementById('closeRecycleModalBtn'),
     recycleListContainer: document.getElementById('recycleListContainer'),
     clearRecycleBinBtn: document.getElementById('clearRecycleBinBtn'),
-    toggleDaysBtn: document.getElementById('toggleDaysBtn'),
     bannerUrgentDdl: document.getElementById('bannerUrgentDdl'),
     bannerUrgentDdlTitle: document.getElementById('bannerUrgentDdlTitle'),
     bannerUrgentDdlTime: document.getElementById('bannerUrgentDdlTime'),
@@ -1506,17 +1505,9 @@
       };
     }
 
-    // 1. Header Row
-    // First corner empty header
-    // Total visible days: 5 (Mon..Fri workweek) or 7 (Full week)
-    const totalDays = state.weekGridDays || 5;
-    if (totalDays === 5) {
-      el.timetableGrid.classList.add('five-days-mode');
-      if (el.toggleDaysBtn) el.toggleDaysBtn.textContent = '📅 完整7天';
-    } else {
-      el.timetableGrid.classList.remove('five-days-mode');
-      if (el.toggleDaysBtn) el.toggleDaysBtn.textContent = '📅 5天模式';
-    }
+    // 1. Header Row (Fixed 5-Day Monday to Friday Workweek)
+    const totalDays = 5;
+    el.timetableGrid.classList.add('five-days-mode');
 
     const cornerTh = document.createElement('div');
     cornerTh.className = 'grid-cell-header';
@@ -2729,11 +2720,25 @@
       showToast('可点击具体课程进行查看与操作');
     });
 
-    // Toggle 5-Day / 7-Day View
-    on(el.toggleDaysBtn, 'click', () => {
-      state.weekGridDays = (state.weekGridDays === 5 ? 7 : 5);
-      renderTimetableGrid();
-      showToast(`已切换至 ${state.weekGridDays} 天模式`);
+    // Developer Contact & Feedback Copy Handlers
+    const copyToClipboard = (text, label) => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`已复制${label}：${text}`);
+        }).catch(() => {
+          showToast(`${label}：${text}`);
+        });
+      } else {
+        showToast(`${label}：${text}`);
+      }
+    };
+
+    on(document.getElementById('copyWeChatBtn'), 'click', () => {
+      copyToClipboard('Z13028667069', '微信号');
+    });
+
+    on(document.getElementById('copyQQBtn'), 'click', () => {
+      copyToClipboard('3120038729', 'QQ 号');
     });
 
     // Modal internal tabs
