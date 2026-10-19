@@ -350,11 +350,65 @@ body.theme-light .current-semester-badge {
   background: var(--accent-emerald);
 }
 
-/* Week Selector Carousel */
+/* Week Selector Trigger & Collapsible Slider */
+.week-toggle-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  margin-top: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+}
+
+body.theme-light .week-toggle-trigger {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.week-toggle-trigger:hover,
+.week-toggle-trigger:active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.week-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.week-toggle-icon {
+  font-size: 0.85rem;
+}
+
+.week-toggle-arrow {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.week-toggle-trigger.expanded .week-toggle-arrow {
+  transform: rotate(180deg);
+  color: #60a5fa;
+}
+
 .week-selector-container {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-top: 8px;
+  transition: all 0.25s ease;
+}
+
+.week-selector-container.collapsed {
+  display: none !important;
 }
 
 .week-nav-btn {
@@ -451,38 +505,56 @@ body.theme-light .current-semester-badge {
 }
 
 /* ========================================================
-   Today Live Banner
+   Compact Today Slim Strip (Ultra lightweight)
    ======================================================== */
 .main-content {
-  padding: 14px 16px;
+  padding: 10px 14px;
 }
 
-.today-banner {
-  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
-  border: 1px solid var(--border-glow);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-body.theme-light .today-banner {
-  background: linear-gradient(135deg, rgba(219, 234, 254, 0.8) 0%, rgba(241, 245, 249, 0.9) 100%);
-}
-
-.banner-top {
+.today-strip {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(30, 58, 138, 0.16);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
-.date-tag {
-  font-size: 0.85rem;
+body.theme-light .today-strip {
+  background: rgba(239, 246, 255, 0.85);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.strip-date {
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-main);
+  white-space: nowrap;
+}
+
+.strip-divider {
+  flex: 1;
+}
+
+.strip-holiday-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.strip-holiday-badge.hidden {
+  display: none !important;
 }
 
 .status-pill {

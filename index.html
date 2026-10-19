@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=20">
+  <link rel="stylesheet" href="app.css?v=22">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -58,8 +58,17 @@
         </select>
       </div>
 
-      <!-- Week Selector Slider -->
-      <div class="week-selector-container" id="weekSelectorContainer">
+      <!-- Compact week toggle trigger (always visible) -->
+      <div class="week-toggle-trigger" id="weekToggleTrigger">
+        <div class="week-toggle-label">
+          <span class="week-toggle-icon">📅</span>
+          <span id="weekToggleText">第 - 周</span>
+        </div>
+        <span class="week-toggle-arrow" id="weekToggleArrow">▾</span>
+      </div>
+
+      <!-- Week Selector Slider (collapsed by default) -->
+      <div class="week-selector-container collapsed" id="weekSelectorContainer">
         <button class="week-nav-btn prev" id="prevWeekBtn" aria-label="上一周">‹</button>
         <div class="week-chips-scroll" id="weekChipsContainer">
           <!-- Week chips dynamically injected -->
@@ -70,46 +79,24 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- Live Today Summary Banner -->
-      <section class="today-banner" id="todayBanner">
-        <div class="banner-top">
-          <div class="date-tag" id="currentDateDisplay">Tuesday, 6 Oct 2026</div>
-          <div class="status-pill active" id="termStatusBadge">第 2 周 • 教学周 (Teaching)</div>
+      <!-- Slim Status Strip (replaces bulky today-banner) -->
+      <div class="today-strip" id="todayBanner">
+        <div class="strip-date" id="currentDateDisplay">今天</div>
+        <div class="strip-divider"></div>
+        <div class="status-pill active" id="termStatusBadge">第 - 周</div>
+        <!-- Holiday inline badge (hidden unless holiday) -->
+        <div class="strip-holiday-badge hidden" id="holidayAlertCard">
+          <span>🎉</span>
+          <span id="holidayTitle">假期</span>
         </div>
-        <div class="banner-next-class" id="nextClassContainer">
-          <div class="next-class-label" id="nextClassLabel">⏰ 下一节课</div>
-          <div class="next-class-content" id="nextClassContent">
-            <div class="next-class-name">✨ 欢迎使用 XMUM 课表与校历通！</div>
-            <div class="next-class-meta">
-              <span class="meta-tag venue">📍 点击右上角【登录】按钮</span>
-              <span class="meta-tag time">🚀 快速同步你的个人课表与作业</span>
-            </div>
-          </div>
+        <!-- Hidden legacy compat -->
+        <span id="nextClassLabel" style="display:none"></span>
+        <span id="nextClassContent" style="display:none"></span>
+        <div id="bannerUrgentDdl" style="display:none">
+          <span id="bannerUrgentDdlTitle"></span>
+          <span id="bannerUrgentDdlTime"></span>
         </div>
-
-        <!-- Prominent Urgent DDL Alert Pill in Banner (最显眼处) -->
-        <div class="banner-urgent-ddl hidden" id="bannerUrgentDdl">
-          <div class="urgent-ddl-left">
-            <span class="urgent-ddl-icon">🔥</span>
-            <div class="urgent-ddl-info">
-              <span class="urgent-ddl-tag">MOODLE 待办</span>
-              <span class="urgent-ddl-title" id="bannerUrgentDdlTitle">暂无待办作业</span>
-            </div>
-          </div>
-          <div class="urgent-ddl-right">
-            <span class="urgent-ddl-time" id="bannerUrgentDdlTime">-</span>
-            <span class="urgent-ddl-arrow">›</span>
-          </div>
-        </div>
-
-        <div class="holiday-alert-card hidden" id="holidayAlertCard">
-          <span class="holiday-icon">🎉</span>
-          <div class="holiday-details">
-            <div class="holiday-title" id="holidayTitle">公共假期</div>
-            <div class="holiday-sub">今日无教学安排，享受你的假期！</div>
-          </div>
-        </div>
-      </section>
+      </div>
 
       <!-- View: Weekly Timetable Grid -->
       <section class="view-panel" id="weeklyGridView">
@@ -737,9 +724,9 @@
     <span id="headerLoginBtnText" style="display:none;" aria-hidden="true"></span>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=20"></script>
-  <script src="data/sample_schedule.js?v=20"></script>
-  <script src="app.js?v=20"></script>
+  <script src="data/academic_calendar.js?v=22"></script>
+  <script src="data/sample_schedule.js?v=22"></script>
+  <script src="app.js?v=22"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

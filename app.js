@@ -49,6 +49,10 @@
     body: document.body,
     semesterSelect: document.getElementById('semesterSelect'),
     studentNameDisplay: document.getElementById('studentNameDisplay'),
+    weekToggleTrigger: document.getElementById('weekToggleTrigger'),
+    weekToggleText: document.getElementById('weekToggleText'),
+    weekToggleArrow: document.getElementById('weekToggleArrow'),
+    weekSelectorContainer: document.getElementById('weekSelectorContainer'),
     weekChipsContainer: document.getElementById('weekChipsContainer'),
     prevWeekBtn: document.getElementById('prevWeekBtn'),
     nextWeekBtn: document.getElementById('nextWeekBtn'),
@@ -194,45 +198,55 @@
 
     // Register Service Worker immediately for instant caching & offline support
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js').catch(err => {
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        if (reg) reg.update();
+      }).catch(err => {
         console.log('SW registration note:', err);
+      });
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
     }
   }
 
   // 1b. App Release & One-Time Update Notice
   const APP_RELEASE_INFO = {
-    version: 'v1.8.0',
-    title: 'XMUM 课表助手全面改版 • 推出【我的】个人中心',
-    date: '2026-10-15',
+    version: 'v1.9.0',
+    title: '首屏视觉重构 • 课程一目了然直达视野',
+    date: '2026-10-19',
     features: [
       {
-        icon: '👤',
-        title: '新增底部【我的】专属个人中心',
-        desc: '深浅色模式切换、课程回收站、更新公告及校园账号同步统一整合，主界面不再拥挤，操作一触即达。'
+        icon: '🚀',
+        title: '首屏大卡片彻底瘦身，课程直达眼帘',
+        desc: '移除了原先占用近半屏空间的下一节课大横幅，精简为一行极轻量状态条，一打开 App 立即看到完整课程安排。'
       },
       {
-        icon: '✨',
-        title: '顶栏彻底告别拥挤堆叠',
-        desc: '移除顶栏原先堆叠的 4 个小按钮，顶栏视野大幅舒展，在课表浏览模式下更显通透典雅。'
+        icon: '📅',
+        title: '周次选择器智能折叠',
+        desc: '全周次滑块隐蔽收纳为精致的周次胶囊，轻触即可随心调整，选完后自动收起，界面清爽纯净。'
       },
       {
-        icon: '📱',
-        title: '智能卡片动态感知',
-        desc: '切换到【我的】页面时自动收起上方的排课与倒计时卡片，呈现专注于个人设置的沉浸式界面。'
-      },
-      {
-        icon: '⚡️',
-        title: '0ms 闪电秒开与零延迟',
-        desc: '底层重构离线缓存导航，首次打开后每次启动均为 0ms 瞬间秒开展现，告别卡顿与加载延迟。'
-      },
-      {
-        icon: '🛡️',
-        title: '手机管家清理垃圾防丢数据',
-        desc: '启用持久化存储 API 与 IndexedDB 结构化数据库双重防护，清理垃圾绝不丢失课表。'
+        icon: '📖',
+        title: '专注课程本身，告别冗余堆叠',
+        desc: '减少首屏无谓提示与横幅干扰，今日各节课程在第一屏即可完整掌握，带来极致流畅的高效体验。'
       }
     ],
     history: [
+      {
+        version: 'v1.8.0',
+        title: 'XMUM 课表助手全面改版 • 推出【我的】个人中心',
+        date: '2026-10-15',
+        highlights: [
+          '新增底部【我的】专属个人中心，深浅色/回收站/公告一站式管理',
+          '顶栏告别拥挤堆叠，视界通透舒展',
+          '离线秒开优化与防误删持久化防护'
+        ]
+      },
       {
         version: 'v1.7.0',
         date: '2026-10-15',
@@ -1242,216 +1256,61 @@
     const isCurrentWeek = (state.selectedWeek === state.realTodayWeek);
     const currentWeekInfo = sem?.weeks.find(w => w.week === state.selectedWeek);
 
+    // Update the compact week selector toggle button text
+    if (el.weekToggleText) {
+      el.weekToggleText.textContent = `第 ${state.selectedWeek} 周${isCurrentWeek ? ' (本周)' : ' • 浏览中'}`;
+    }
+
     if (isCurrentWeek) {
       // Real today's week
       const parts = state.realTodayDateStr.split('-');
       const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
-      const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
-      el.currentDateDisplay.textContent = dateObj.toLocaleDateString('zh-CN', options);
+      const options = { weekday: 'short', month: 'numeric', day: 'numeric' };
+      if (el.currentDateDisplay) {
+        el.currentDateDisplay.textContent = dateObj.toLocaleDateString('zh-CN', options);
+      }
       
-      el.termStatusBadge.innerHTML = `第 ${state.selectedWeek} 周 • 教学周 (本周)`;
-      el.termStatusBadge.className = 'status-pill active';
-      el.termStatusBadge.onclick = null;
-
-      // Realtime check for today based on current hour and minute
-      const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
-
-      // Today courses
-      const todayCourses = (state.schedule?.courses || [])
-        .filter(c => {
-          if (!c.weeks) return true;
-          const wList = Array.isArray(c.weeks) ? c.weeks.map(Number) : [];
-          return wList.includes(Number(state.realTodayWeek));
-        })
-        .map(c => getEffectiveCourseForWeek(c, Number(state.realTodayWeek)))
-        .filter(c => Number(c.dayOfWeek) === Number(state.realTodayDay))
-        .sort((a, b) => {
-          const aMin = parseCourseTimeMinutes(a).startMin;
-          const bMin = parseCourseTimeMinutes(b).startMin;
-          return aMin !== bMin ? aMin - bMin : (a.startSlot || 0) - (b.startSlot || 0);
-        });
-
-      if (todayCourses.length > 0) {
-        let ongoingCourse = null;
-        let nextCourse = null;
-
-        for (const c of todayCourses) {
-          const { startMin, endMin } = parseCourseTimeMinutes(c);
-          if (startMin <= currentMin && currentMin < endMin) {
-            if (!ongoingCourse) ongoingCourse = c;
-          } else if (currentMin < startMin && !nextCourse) {
-            nextCourse = c;
-          }
-        }
-
-        if (ongoingCourse) {
-          // A course is currently ongoing
-          const { endMin } = parseCourseTimeMinutes(ongoingCourse);
-          const remainMin = Math.max(1, endMin - currentMin);
-          if (el.nextClassLabel) {
-            el.nextClassLabel.innerHTML = `🔴 正在上课中 • 距下课还有 ${remainMin} 分钟`;
-          }
-
-          let tagsHtml = `
-            <span class="meta-tag venue">📍 ${ongoingCourse.location}</span>
-            <span class="meta-tag time">🕒 ${ongoingCourse.startTime} - ${ongoingCourse.endTime}</span>
-            <span class="meta-tag lecturer">👤 ${ongoingCourse.instructor}</span>
-            <span class="meta-tag" style="background:#10b981; color:#fff;">正在进行</span>
-          `;
-          if (ongoingCourse.isRescheduled) {
-            tagsHtml += `<span class="meta-tag" style="background:#f97316; color:#fff;">🔄 已调课</span>`;
-          }
-          if (ongoingCourse.notes) {
-            tagsHtml += `<span class="meta-tag" style="background:#3b82f6; color:#fff;">📝 ${ongoingCourse.notes}</span>`;
-          }
-          if (nextCourse) {
-            tagsHtml += `<span class="meta-tag" style="background:rgba(59,130,246,0.2); color:#60a5fa;">👉 下一节课: ${nextCourse.startTime} ${nextCourse.code} (${nextCourse.location})</span>`;
-          }
-
-          el.nextClassContent.innerHTML = `
-            <div class="next-class-name">${ongoingCourse.code} ${ongoingCourse.name}</div>
-            <div class="next-class-meta">${tagsHtml}</div>
-          `;
-        } else if (nextCourse) {
-          // An upcoming course later today
-          const { startMin } = parseCourseTimeMinutes(nextCourse);
-          const diffMin = startMin - currentMin;
-          let timeCountText = '';
-          if (diffMin <= 60) {
-            timeCountText = `距上课还有 ${diffMin} 分钟`;
-          } else {
-            const diffH = Math.floor(diffMin / 60);
-            const remM = diffMin % 60;
-            timeCountText = `距上课约 ${diffH}小时${remM > 0 ? remM + '分' : ''}`;
-          }
-
-          if (el.nextClassLabel) {
-            el.nextClassLabel.innerHTML = `⏰ 下一节课 • ${timeCountText}`;
-          }
-
-          let tagsHtml = `
-            <span class="meta-tag venue">📍 ${nextCourse.location}</span>
-            <span class="meta-tag time">🕒 ${nextCourse.startTime} - ${nextCourse.endTime}</span>
-            <span class="meta-tag lecturer">👤 ${nextCourse.instructor}</span>
-          `;
-          if (nextCourse.isRescheduled) {
-            tagsHtml += `<span class="meta-tag" style="background:#f97316; color:#fff;">🔄 已调课</span>`;
-          }
-          if (nextCourse.notes) {
-            tagsHtml += `<span class="meta-tag" style="background:#10b981; color:#fff;">📝 ${nextCourse.notes}</span>`;
-          }
-
-          el.nextClassContent.innerHTML = `
-            <div class="next-class-name">${nextCourse.code} ${nextCourse.name}</div>
-            <div class="next-class-meta">${tagsHtml}</div>
-          `;
-        } else {
-          // All today's courses have finished!
-          if (el.nextClassLabel) {
-            el.nextClassLabel.innerHTML = '🎉 今日课程已全部结束';
-          }
-
-          // Look ahead to tomorrow's first course
-          const tomorrowDay = (state.realTodayDay % 7) + 1;
-          const tomorrowWeek = (tomorrowDay === 1) ? state.realTodayWeek + 1 : state.realTodayWeek;
-          const tomorrowCourses = (state.schedule?.courses || [])
-            .filter(c => {
-              if (!c.weeks) return true;
-              const wList = Array.isArray(c.weeks) ? c.weeks.map(Number) : [];
-              return wList.includes(tomorrowWeek);
-            })
-            .map(c => getEffectiveCourseForWeek(c, tomorrowWeek))
-            .filter(c => Number(c.dayOfWeek) === tomorrowDay)
-            .sort((a, b) => {
-              const aMin = parseCourseTimeMinutes(a).startMin;
-              const bMin = parseCourseTimeMinutes(b).startMin;
-              return aMin !== bMin ? aMin - bMin : (a.startSlot || 0) - (b.startSlot || 0);
-            });
-
-          let tomorrowHint = '';
-          if (tomorrowCourses.length > 0) {
-            const tomFirst = tomorrowCourses[0];
-            tomorrowHint = `✨ 明日首节课: ${tomFirst.startTime} ${tomFirst.code} ${tomFirst.name} (📍 ${tomFirst.location})`;
-          } else {
-            tomorrowHint = `明日（${DAY_ZH[tomorrowDay - 1]}）暂无排课安排，好好放松！`;
-          }
-
-          el.nextClassContent.innerHTML = `
-            <div class="next-class-name">今日 ${todayCourses.length} 门课程已全部完成！好好休息～ 🎉</div>
-            <div class="next-class-meta">
-              <span class="meta-tag">${tomorrowHint}</span>
-            </div>
-          `;
-        }
-      } else {
-        if (el.nextClassLabel) {
-          el.nextClassLabel.textContent = '⏰ 今日课程安排';
-        }
-        el.nextClassContent.innerHTML = `
-          <div class="next-class-name">今日（${DAY_ZH[state.realTodayDay - 1]}）暂无排课安排 🎉</div>
-          <div class="next-class-meta">
-            <span class="meta-tag">所有课程正常运行，可查看下方周课表掌握全周节奏</span>
-          </div>
-        `;
+      if (el.termStatusBadge) {
+        el.termStatusBadge.innerHTML = `第 ${state.selectedWeek} 周 • 教学周`;
+        el.termStatusBadge.className = 'status-pill active';
+        el.termStatusBadge.onclick = null;
       }
 
       checkHolidayAlert(state.realTodayDateStr);
     } else {
-      // Browsing another week (e.g. Week 3, Week 4)
-      const rangeText = currentWeekInfo ? `${currentWeekInfo.start} 至 ${currentWeekInfo.end}` : '';
-      el.currentDateDisplay.textContent = `第 ${state.selectedWeek} 周 (${rangeText})`;
-      
-      el.termStatusBadge.innerHTML = `第 ${state.selectedWeek} 周 • 浏览中 <span style="text-decoration:underline; font-weight:800;">[回今天]</span>`;
-      el.termStatusBadge.className = 'status-pill browsing-pill';
-      el.termStatusBadge.onclick = goToToday;
-
-      if (el.nextClassLabel) {
-        el.nextClassLabel.textContent = `📋 第 ${state.selectedWeek} 周 • 课程预览`;
+      // Browsing another week
+      if (el.currentDateDisplay) {
+        const rangeText = currentWeekInfo ? `${currentWeekInfo.start.slice(5)} 至 ${currentWeekInfo.end.slice(5)}` : '';
+        el.currentDateDisplay.textContent = rangeText ? `周区间: ${rangeText}` : `第 ${state.selectedWeek} 周`;
       }
-
-      const weekCourses = (state.schedule?.courses || [])
-        .filter(c => c.weeks && c.weeks.includes(state.selectedWeek))
-        .map(c => getEffectiveCourseForWeek(c, state.selectedWeek));
-
-      if (weekCourses.length > 0) {
-        el.nextClassContent.innerHTML = `
-          <div class="next-class-name">第 ${state.selectedWeek} 周共有 ${weekCourses.length} 门课程安排</div>
-          <div class="next-class-meta">
-            <span class="meta-tag" style="background:rgba(59,130,246,0.2); color:#60a5fa;">💡 提示：当前在浏览第 ${state.selectedWeek} 周，下方周课表已同步切换</span>
-          </div>
-        `;
-      } else {
-        el.nextClassContent.innerHTML = `
-          <div class="next-class-name">第 ${state.selectedWeek} 周暂无排课安排 🎉</div>
-          <div class="next-class-meta">
-            <span class="meta-tag">非教学周或无课程安排</span>
-          </div>
-        `;
+      
+      if (el.termStatusBadge) {
+        el.termStatusBadge.innerHTML = `第 ${state.selectedWeek} 周 • 浏览中 <span style="text-decoration:underline; font-weight:800;">[回今天]</span>`;
+        el.termStatusBadge.className = 'status-pill browsing-pill';
+        el.termStatusBadge.onclick = goToToday;
       }
 
       // Check holidays in this week
       if (currentWeekInfo && typeof ACADEMIC_CALENDAR !== 'undefined') {
         const hols = ACADEMIC_CALENDAR.publicHolidays.filter(h => h.date >= currentWeekInfo.start && h.date <= currentWeekInfo.end);
-        if (hols.length > 0) {
+        if (hols.length > 0 && el.holidayAlertCard && el.holidayTitle) {
           el.holidayAlertCard.classList.remove('hidden');
-          el.holidayTitle.textContent = `🎉 本周包含法定公休: ${hols.map(h => `${h.name} (${h.date})`).join(', ')}`;
-        } else {
+          el.holidayTitle.textContent = `${hols[0].name}`;
+        } else if (el.holidayAlertCard) {
           el.holidayAlertCard.classList.add('hidden');
         }
-      } else {
+      } else if (el.holidayAlertCard) {
         el.holidayAlertCard.classList.add('hidden');
       }
     }
-    updateBannerUrgentDdl();
   }
 
   function checkHolidayAlert(dateStr) {
-    if (typeof ACADEMIC_CALENDAR === 'undefined') return;
+    if (typeof ACADEMIC_CALENDAR === 'undefined' || !el.holidayAlertCard) return;
     const holiday = ACADEMIC_CALENDAR.publicHolidays.find(h => h.date === dateStr);
-    if (holiday) {
+    if (holiday && el.holidayTitle) {
       el.holidayAlertCard.classList.remove('hidden');
-      el.holidayTitle.textContent = `🎉 公共假期: ${holiday.name}`;
+      el.holidayTitle.textContent = holiday.name;
     } else {
       el.holidayAlertCard.classList.add('hidden');
     }
@@ -1471,6 +1330,14 @@
       state.selectedDay = state.realTodayDay;
     } else {
       if (!state.selectedDay) state.selectedDay = 1;
+    }
+
+    // Auto-collapse week selector on user selection
+    if (el.weekSelectorContainer) {
+      el.weekSelectorContainer.classList.add('collapsed');
+    }
+    if (el.weekToggleTrigger) {
+      el.weekToggleTrigger.classList.remove('expanded');
     }
 
     updateTodayBanner();
@@ -1996,11 +1863,13 @@
     const todayBanner = document.getElementById('todayBanner');
     const semesterStrip = document.getElementById('semesterStrip');
     const weekSelector = document.getElementById('weekSelectorContainer');
+    const weekToggleTrigger = document.getElementById('weekToggleTrigger');
     const appHeader = document.getElementById('appHeader');
 
     if (todayBanner) todayBanner.classList.toggle('hidden', isProfile);
     if (semesterStrip) semesterStrip.classList.toggle('hidden', isProfile);
     if (weekSelector) weekSelector.classList.toggle('hidden', isProfile);
+    if (weekToggleTrigger) weekToggleTrigger.classList.toggle('hidden', isProfile);
     if (appHeader) appHeader.classList.toggle('in-profile-view', isProfile);
 
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2782,6 +2651,25 @@
       updateSemesterInfo();
       renderWeekChips();
       renderView();
+    });
+
+    // Week toggle trigger (expand / collapse weekly chips carousel)
+    on(el.weekToggleTrigger, 'click', () => {
+      if (!el.weekSelectorContainer) return;
+      const isCollapsed = el.weekSelectorContainer.classList.contains('collapsed');
+      if (isCollapsed) {
+        el.weekSelectorContainer.classList.remove('collapsed');
+        if (el.weekToggleTrigger) el.weekToggleTrigger.classList.add('expanded');
+        const activeChip = el.weekChipsContainer?.querySelector('.week-chip.active');
+        if (activeChip) {
+          setTimeout(() => {
+            activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }, 50);
+        }
+      } else {
+        el.weekSelectorContainer.classList.add('collapsed');
+        if (el.weekToggleTrigger) el.weekToggleTrigger.classList.remove('expanded');
+      }
     });
 
     // Week navigation buttons

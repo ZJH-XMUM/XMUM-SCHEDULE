@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v20';
+const CACHE_NAME = 'xmum-schedule-v22';
 const ASSETS_TO_CACHE = [
   '/',
   './',
@@ -65,23 +65,20 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 1. Navigation Request (User visits root domain, reloads page, or opens PWA app icon)
-  // MUST return index.html in 0ms directly from cache for zero latency!
+  // Network-First with Cache Fallback: ensures latest UI on reload while supporting full offline use
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('index.html', { ignoreSearch: true }).then((cachedIndex) => {
-        const networkFetch = fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put('index.html', responseToCache);
-              cache.put('/', responseToCache.clone());
-            });
-          }
-          return networkResponse;
-        }).catch(() => cachedIndex);
-
-        // Instant launch from cache; if first-ever launch, use network
-        return cachedIndex || networkFetch;
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put('index.html', responseToCache);
+            cache.put('/', responseToCache.clone());
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match('index.html', { ignoreSearch: true });
       })
     );
     return;
