@@ -78,12 +78,12 @@ body.theme-light {
 }
 
 html {
-  background-color: #0b1120;
+  background-color: #0f172a !important;
   color-scheme: dark;
 }
 
 html.theme-light {
-  background-color: #f0f4f8;
+  background-color: #f0f4f8 !important;
   color-scheme: light;
 }
 
@@ -92,7 +92,7 @@ body {
   min-height: 100%;
   min-height: 100dvh;
   font-family: var(--font-family);
-  background-color: #0b1120;
+  background-color: #0f172a !important;
   background: var(--bg-gradient);
   color: var(--text-main);
   overflow-x: hidden;
@@ -103,7 +103,7 @@ body {
 }
 
 body.theme-light {
-  background-color: #f0f4f8;
+  background-color: #f0f4f8 !important;
 }
 
 /* App Shell Container (Responsive Desktop & Mobile Viewports) */

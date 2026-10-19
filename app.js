@@ -1274,6 +1274,7 @@
     if (isCurrentWeek) {
       // Real today's week
       const parts = state.realTodayDateStr.split('-');
+      const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0);
       const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
       const weekName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
