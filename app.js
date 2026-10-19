@@ -1131,27 +1131,37 @@
     state.theme = theme;
     localStorage.setItem('xmum_theme', theme);
     const docEl = document.documentElement;
-    if (theme === 'light') {
+    const isLight = (theme === 'light');
+    const colorBg = isLight ? '#f0f4f8' : '#0b1120';
+    const colorHeader = isLight ? '#ffffff' : '#0f172a';
+
+    if (isLight) {
       docEl.classList.remove('theme-dark');
       docEl.classList.add('theme-light');
       docEl.style.colorScheme = 'light';
-      docEl.style.backgroundColor = '#f0f4f8';
+      docEl.style.backgroundColor = colorBg;
       el.body.classList.remove('theme-dark');
       el.body.classList.add('theme-light');
-      el.body.style.backgroundColor = '#f0f4f8';
+      el.body.style.backgroundColor = colorBg;
       if (el.themeToggleBtn) el.themeToggleBtn.querySelector('.theme-icon').textContent = '☀️';
     } else {
       docEl.classList.remove('theme-light');
       docEl.classList.add('theme-dark');
       docEl.style.colorScheme = 'dark';
-      docEl.style.backgroundColor = '#0b1120';
+      docEl.style.backgroundColor = colorBg;
       el.body.classList.remove('theme-light');
       el.body.classList.add('theme-dark');
-      el.body.style.backgroundColor = '#0b1120';
+      el.body.style.backgroundColor = colorBg;
       if (el.themeToggleBtn) el.themeToggleBtn.querySelector('.theme-icon').textContent = '🌙';
     }
-    const metaTheme = document.getElementById('metaThemeColor');
-    if (metaTheme) metaTheme.content = (theme === 'light') ? '#f0f4f8' : '#0b1120';
+
+    // Update ALL theme-color metas and color-scheme for mobile Android/iOS status & navigation bar immersion
+    const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+    if (metaColorScheme) metaColorScheme.content = isLight ? 'light' : 'dark';
+    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
+      meta.setAttribute('content', colorHeader);
+    });
+
     updateProfileThemeUI();
   }
 
@@ -1264,10 +1274,11 @@
     if (isCurrentWeek) {
       // Real today's week
       const parts = state.realTodayDateStr.split('-');
-      const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
-      const options = { weekday: 'short', month: 'numeric', day: 'numeric' };
+      const month = dateObj.getMonth() + 1;
+      const day = dateObj.getDate();
+      const weekName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
       if (el.currentDateDisplay) {
-        el.currentDateDisplay.textContent = dateObj.toLocaleDateString('zh-CN', options);
+        el.currentDateDisplay.textContent = `${month}月${day}日 ${weekName}`;
       }
       
       if (el.termStatusBadge) {
@@ -1858,7 +1869,9 @@
     });
 
     // Control visibility of top schedule cards:
-    // When in 'profileView', hide todayBanner, semesterStrip, and weekSelectorContainer
+    // 1. todayBanner (today status strip) should ONLY show in 'dailyAgendaView' (Today view)
+    // 2. When in 'profileView', hide semesterStrip, weekSelector, and weekToggleTrigger
+    const isDaily = (viewName === 'dailyAgendaView');
     const isProfile = (viewName === 'profileView');
     const todayBanner = document.getElementById('todayBanner');
     const semesterStrip = document.getElementById('semesterStrip');
@@ -1866,7 +1879,7 @@
     const weekToggleTrigger = document.getElementById('weekToggleTrigger');
     const appHeader = document.getElementById('appHeader');
 
-    if (todayBanner) todayBanner.classList.toggle('hidden', isProfile);
+    if (todayBanner) todayBanner.classList.toggle('hidden', !isDaily);
     if (semesterStrip) semesterStrip.classList.toggle('hidden', isProfile);
     if (weekSelector) weekSelector.classList.toggle('hidden', isProfile);
     if (weekToggleTrigger) weekToggleTrigger.classList.toggle('hidden', isProfile);
