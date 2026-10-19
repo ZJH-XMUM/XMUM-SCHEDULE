@@ -1727,26 +1727,128 @@ body.theme-light .grid-time-slot {
 
 .year-tabs {
   display: flex;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.45);
   padding: 3px;
   border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .year-tab {
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: var(--radius-full);
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
+.year-tab:hover {
+  color: var(--text-main);
+}
+
 .year-tab.active {
   background: var(--primary);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+}
+
+/* Light Theme Academic Calendar Optimizations */
+body.theme-light .calendar-hero-card {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.96) 0%, rgba(248, 250, 252, 0.96) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+}
+
+body.theme-light .calendar-hero-card .sub-badge {
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+body.theme-light .calendar-hero-card .hero-title {
+  color: #0f172a;
+}
+
+body.theme-light .calendar-hero-card .hero-desc {
+  color: #475569;
+}
+
+body.theme-light .year-tabs {
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+body.theme-light .year-tab {
+  color: #475569;
+  font-weight: 700;
+}
+
+body.theme-light .year-tab:hover {
+  color: #0f172a;
+}
+
+body.theme-light .year-tab.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+body.theme-light .milestone-card {
+  background: #ffffff;
+  border-color: rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .milestone-label {
+  color: #64748b;
+}
+
+body.theme-light .milestone-countdown {
+  color: #0284c7;
+}
+
+body.theme-light .milestone-sub {
+  color: #94a3b8;
+}
+
+body.theme-light .sem-card {
+  background: #ffffff;
+  border-color: rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .sem-card-title {
+  color: #0f172a;
+}
+
+body.theme-light .sem-duration {
+  color: #0284c7;
+}
+
+body.theme-light .holiday-item {
+  background: #ffffff;
+  border-color: rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+body.theme-light .holiday-name {
+  color: #0f172a;
+}
+
+body.theme-light .holiday-date {
+  color: #d97706;
+}
+
+body.theme-light .section-title {
+  color: #0f172a;
 }
 
 .milestones-row {
@@ -3737,3 +3839,10 @@ body.theme-light .contact-item {
   line-height: 1.4;
   opacity: 0.85;
 }
+
+body.theme-light .profile-version-pill {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+}
+

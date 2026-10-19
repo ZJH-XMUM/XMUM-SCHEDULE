@@ -189,6 +189,8 @@
       renderAcademicCalendar();
       updateRecycleCountBadge();
       checkUpdateNotice();
+      const profileVersionPill = document.querySelector('.profile-version-pill');
+      if (profileVersionPill) profileVersionPill.textContent = APP_RELEASE_INFO.version;
       updateHeaderLoginState();
       requestPersistentStorage();
     } catch (err) {
@@ -215,27 +217,42 @@
 
   // 1b. App Release & One-Time Update Notice
   const APP_RELEASE_INFO = {
-    version: 'v1.9.0',
-    title: '首屏视觉重构 • 课程一目了然直达视野',
-    date: '2026-10-19',
+    version: 'v2.0.0',
+    title: '周课表纯享 5 天 • 开发者联系与视觉体验全面升级',
+    date: '2026-10-20',
     features: [
       {
-        icon: '🚀',
-        title: '首屏大卡片彻底瘦身，课程直达眼帘',
-        desc: '移除了原先占用近半屏空间的下一节课大横幅，精简为一行极轻量状态条，一打开 App 立即看到完整课程安排。'
-      },
-      {
         icon: '📅',
-        title: '周次选择器智能折叠',
-        desc: '全周次滑块隐蔽收纳为精致的周次胶囊，轻触即可随心调整，选完后自动收起，界面清爽纯净。'
+        title: '周课表纯享 5 天工作日视图',
+        desc: '专注周一至周五学习排课，彻底移除切换繁琐；全屏自适应铺满手机屏幕，告别横向拖动；顶部星期与日期垂直分行排版，彻底解决文字截断。'
       },
       {
-        icon: '📖',
-        title: '专注课程本身，告别冗余堆叠',
-        desc: '减少首屏无谓提示与横幅干扰，今日各节课程在第一屏即可完整掌握，带来极致流畅的高效体验。'
+        icon: '💬',
+        title: '新增开发者与技术支持联系卡片',
+        desc: '「我的」页面底部全新入驻技术支持卡片！微信号 Z13028667069 与 QQ 号 3120038729 支持一键轻触复制，欢迎随时交流与反馈！'
+      },
+      {
+        icon: '☀️',
+        title: '浅色学术模式视觉深度优化',
+        desc: '校历年份切换（2026/2027）在浅色模式下全面采用高对比度学术设计，字迹清晰易辨；同时全面优化倒计时及详情卡片的易读性。'
+      },
+      {
+        icon: '⚡️',
+        title: '极速渲染与离线缓存升级',
+        desc: '彻底修复极端场景与首次加载下的渲染异常，全面升级 Service Worker 离线安全缓存，多重持久化保险箱守护课表零丢失。'
       }
     ],
     history: [
+      {
+        version: 'v1.9.0',
+        title: '首屏视觉重构 • 课程一目了然直达视野',
+        date: '2026-10-19',
+        items: [
+          '首屏大卡片彻底瘦身，课程直达眼帘',
+          '周次选择器智能折叠收纳为精致胶囊',
+          '专注课程本身，告别冗余堆叠'
+        ]
+      },
       {
         version: 'v1.8.0',
         title: 'XMUM 课表助手全面改版 • 推出【我的】个人中心',
@@ -336,6 +353,10 @@
   }
 
   function renderUpdateNoticeModal() {
+    const profileVersionPill = document.querySelector('.profile-version-pill');
+    if (profileVersionPill) {
+      profileVersionPill.textContent = APP_RELEASE_INFO.version;
+    }
     if (el.updateNoticeBadge) {
       el.updateNoticeBadge.textContent = `🎉 升级公告 • ${APP_RELEASE_INFO.version}`;
     }
