@@ -1538,16 +1538,16 @@
       dayHeader.style.gridColumn = `${d + 1}`;
       dayHeader.style.gridRow = '1';
 
+      const shortDate = holInfo.dateStr ? `${parseInt(holInfo.dateStr.slice(5, 7), 10)}.${parseInt(holInfo.dateStr.slice(8, 10), 10)}` : '';
       if (holInfo.holiday) {
         dayHeader.innerHTML = `
-          <div>${DAY_ZH[d - 1]} ${isToday ? '<span class="tab-today-badge">今天</span> ' : ''}<span class="holiday-pill">放假</span></div>
-          <div class="holiday-name-sub" title="${holInfo.holiday.name}">${holInfo.holiday.name}</div>
+          <div class="header-day-line">${DAY_ZH[d - 1]}${isToday ? '<span class="header-mini-today">今</span>' : ''}<span class="holiday-pill-mini">假</span></div>
+          <div class="header-date-sub" title="${holInfo.holiday.name}">${shortDate || holInfo.holiday.name}</div>
         `;
       } else {
-        const shortDate = holInfo.dateStr ? `${parseInt(holInfo.dateStr.slice(5, 7))}.${parseInt(holInfo.dateStr.slice(8, 10))}` : '';
         dayHeader.innerHTML = `
-          <div>${DAY_ZH[d - 1]} ${isToday ? '<span class="tab-today-badge">今天</span>' : ''}</div>
-          <div style="font-size:0.6rem; opacity:0.8;">${shortDate || DAY_NAMES[d - 1].slice(0, 3)}</div>
+          <div class="header-day-line">${DAY_ZH[d - 1]}${isToday ? '<span class="header-mini-today">今</span>' : ''}</div>
+          <div class="header-date-sub">${shortDate || DAY_NAMES[d - 1].slice(0, 3)}</div>
         `;
       }
       

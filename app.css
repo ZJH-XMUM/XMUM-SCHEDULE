@@ -1284,6 +1284,47 @@ body.theme-light .grid-cell-header {
   z-index: 6;
 }
 
+.header-day-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.header-mini-today {
+  display: inline-block;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.holiday-pill-mini {
+  display: inline-block;
+  background: rgba(239, 68, 68, 0.85);
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.header-date-sub {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
 .grid-time-slot {
   font-size: 0.68rem;
   color: var(--text-sub);
@@ -2959,13 +3000,25 @@ body.theme-light .reschedule-time-preview .preview-value {
 
   .grid-cell-header {
     padding: 6px 1px;
-    font-size: 0.67rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .grid-cell-header:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 7;
+    background: var(--bg-card);
   }
   .grid-time-slot {
     height: 72px !important;
     font-size: 0.63rem;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
   }
   .grid-time-slot .time-start {
     font-size: 0.68rem;
