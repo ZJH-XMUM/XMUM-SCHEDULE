@@ -1945,11 +1945,33 @@
     return canvas;
   }
 
-  function downloadSchedulePdf(weekNumber) {
+  function getCanvasBlob(canvas, mimeType = 'image/png', quality = 0.95) {
+    return new Promise((resolve) => {
+      if (canvas.toBlob) {
+        canvas.toBlob((blob) => resolve(blob), mimeType, quality);
+      } else {
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        const byteString = atob(dataUrl.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        resolve(new Blob([ab], { type: mimeType }));
+      }
+    });
+  }
+
+  async function downloadSchedulePdf(weekNumber) {
+    if (!el.btnDownloadPdf) return;
+    const origHtml = el.btnDownloadPdf.innerHTML;
     try {
-      showToast('⏳ 正在生成单页 PDF 课表...');
+      el.btnDownloadPdf.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">正在生成 PDF...</span>';
+      el.btnDownloadPdf.disabled = true;
+
       const canvas = generateWeeklyScheduleCanvas(weekNumber);
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const fileName = `XMUM_第${weekNumber}周课表.pdf`;
       
       const jspdfModule = window.jspdf;
       if (jspdfModule && jspdfModule.jsPDF) {
@@ -1961,22 +1983,48 @@
         });
         // 297mm x 210mm A4 landscape, exactly 1 page
         pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
-        pdf.save(`XMUM_第${weekNumber}周课表.pdf`);
 
-        // Tactile button confirmation feedback
-        if (el.btnDownloadPdf) {
-          const origHtml = el.btnDownloadPdf.innerHTML;
-          el.btnDownloadPdf.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">PDF 导出成功！</span>';
-          el.btnDownloadPdf.classList.add('export-btn-success');
-          setTimeout(() => {
-            if (el.btnDownloadPdf) {
+        const pdfBlob = pdf.output('blob');
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+        // On mobile devices supporting Web Share, invoke native Save to Files / Share
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          try {
+            await navigator.share({
+              files: [pdfFile],
+              title: fileName
+            });
+            el.btnDownloadPdf.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">PDF 已保存</span>';
+            el.btnDownloadPdf.classList.add('export-btn-success');
+            showToast('✅ 课表 PDF 已成功存储');
+            setTimeout(() => {
+              if (el.btnDownloadPdf) {
+                el.btnDownloadPdf.innerHTML = origHtml;
+                el.btnDownloadPdf.classList.remove('export-btn-success');
+                el.btnDownloadPdf.disabled = false;
+              }
+            }, 2500);
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === 'AbortError') {
               el.btnDownloadPdf.innerHTML = origHtml;
-              el.btnDownloadPdf.classList.remove('export-btn-success');
+              el.btnDownloadPdf.disabled = false;
+              showToast('已取消导出');
+              return;
             }
-          }, 2500);
+          }
         }
 
-        showToast('🎉 PDF 课表导出成功！已开始下载');
+        // Standard link download fallback
+        pdf.save(fileName);
+        el.btnDownloadPdf.innerHTML = '<span class="btn-icon">📥</span><span class="btn-text">已调起下载</span>';
+        showToast('📥 已向浏览器发起下载，请确认系统下载弹窗');
+        setTimeout(() => {
+          if (el.btnDownloadPdf) {
+            el.btnDownloadPdf.innerHTML = origHtml;
+            el.btnDownloadPdf.disabled = false;
+          }
+        }, 3000);
       } else {
         const printWin = window.open('', '_blank');
         if (printWin) {
@@ -1998,43 +2046,81 @@
           `);
           printWin.document.close();
         }
-        showToast('🎉 已打开打印/保存窗口');
+        showToast('📄 已打开打印预览窗口');
+        el.btnDownloadPdf.innerHTML = origHtml;
+        el.btnDownloadPdf.disabled = false;
       }
     } catch (err) {
       console.error('PDF export error:', err);
       showToast('❌ PDF 导出失败，请重试');
+      el.btnDownloadPdf.innerHTML = origHtml;
+      el.btnDownloadPdf.disabled = false;
     }
   }
 
-  function downloadSchedulePng(weekNumber) {
+  async function downloadSchedulePng(weekNumber) {
+    if (!el.btnDownloadPng) return;
+    const origHtml = el.btnDownloadPng.innerHTML;
     try {
-      showToast('⏳ 正在生成高清课表图片...');
+      el.btnDownloadPng.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">正在生成图片...</span>';
+      el.btnDownloadPng.disabled = true;
+
       const canvas = generateWeeklyScheduleCanvas(weekNumber);
-      const dataUrl = canvas.toDataURL('image/png');
+      const fileName = `XMUM_第${weekNumber}周课表.png`;
+      const blob = await getCanvasBlob(canvas, 'image/png');
+      const pngFile = new File([blob], fileName, { type: 'image/png' });
+
+      // On mobile devices supporting Web Share, invoke native Save to Photos
+      if (navigator.canShare && navigator.canShare({ files: [pngFile] })) {
+        try {
+          await navigator.share({
+            files: [pngFile],
+            title: fileName
+          });
+          el.btnDownloadPng.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">图片已保存</span>';
+          el.btnDownloadPng.classList.add('export-btn-success');
+          showToast('✅ 课表图片已成功存入手机');
+          setTimeout(() => {
+            if (el.btnDownloadPng) {
+              el.btnDownloadPng.innerHTML = origHtml;
+              el.btnDownloadPng.classList.remove('export-btn-success');
+              el.btnDownloadPng.disabled = false;
+            }
+          }, 2500);
+          return;
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') {
+            el.btnDownloadPng.innerHTML = origHtml;
+            el.btnDownloadPng.disabled = false;
+            showToast('已取消保存');
+            return;
+          }
+        }
+      }
+
+      // Standard link download fallback
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `XMUM_第${weekNumber}周课表.png`;
-      link.href = dataUrl;
+      link.download = fileName;
+      link.href = url;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-      // Tactile button confirmation feedback
-      if (el.btnDownloadPng) {
-        const origHtml = el.btnDownloadPng.innerHTML;
-        el.btnDownloadPng.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">图片保存成功！</span>';
-        el.btnDownloadPng.classList.add('export-btn-success');
-        setTimeout(() => {
-          if (el.btnDownloadPng) {
-            el.btnDownloadPng.innerHTML = origHtml;
-            el.btnDownloadPng.classList.remove('export-btn-success');
-          }
-        }, 2500);
-      }
-
-      showToast('🎉 高清课表图片已保存！');
+      el.btnDownloadPng.innerHTML = '<span class="btn-icon">📥</span><span class="btn-text">已调起下载</span>';
+      showToast('📥 已向浏览器发起下载，长按上方预览图也可存入相册');
+      setTimeout(() => {
+        if (el.btnDownloadPng) {
+          el.btnDownloadPng.innerHTML = origHtml;
+          el.btnDownloadPng.disabled = false;
+        }
+      }, 3000);
     } catch (err) {
       console.error('Image export error:', err);
-      showToast('❌ 保存失败，请长按预览图直接存储');
+      showToast('❌ 保存失败，请直接长按预览图存入相册');
+      el.btnDownloadPng.innerHTML = origHtml;
+      el.btnDownloadPng.disabled = false;
     }
   }
 
