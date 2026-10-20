@@ -150,7 +150,16 @@
     noticeHistoryView: document.getElementById('noticeHistoryView'),
     updateHistoryTimeline: document.getElementById('updateHistoryTimeline'),
     closeUpdateNoticeBtn: document.getElementById('closeUpdateNoticeBtn'),
-    confirmUpdateNoticeBtn: document.getElementById('confirmUpdateNoticeBtn')
+    confirmUpdateNoticeBtn: document.getElementById('confirmUpdateNoticeBtn'),
+    exportScheduleBtn: document.getElementById('exportScheduleBtn'),
+    profileExportScheduleBtn: document.getElementById('profileExportScheduleBtn'),
+    exportScheduleModal: document.getElementById('exportScheduleModal'),
+    exportScheduleModalTitle: document.getElementById('exportScheduleModalTitle'),
+    closeExportScheduleBtn: document.getElementById('closeExportScheduleBtn'),
+    exportPreviewLoading: document.getElementById('exportPreviewLoading'),
+    exportPreviewImg: document.getElementById('exportPreviewImg'),
+    btnDownloadPdf: document.getElementById('btnDownloadPdf'),
+    btnDownloadPng: document.getElementById('btnDownloadPng')
   };
 
   // Modal Helpers with Mobile Scroll-Lock
@@ -1659,6 +1668,391 @@
     });
   }
 
+  // 6b. Export Schedule (Single Page Minimalist PDF & Image)
+  function drawRoundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, width, height, radius);
+    } else {
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+    }
+  }
+
+  function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxHeight) {
+    const chars = Array.from(text || '');
+    let line = '';
+    let curY = y;
+    
+    for (let i = 0; i < chars.length; i++) {
+      const testLine = line + chars[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && i > 0) {
+        if (curY + lineHeight > y + maxHeight) {
+          ctx.fillText(line.slice(0, -1) + '…', x, curY);
+          return;
+        }
+        ctx.fillText(line, x, curY);
+        line = chars[i];
+        curY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    if (curY <= y + maxHeight && line) {
+      ctx.fillText(line, x, curY);
+    }
+  }
+
+  function generateWeeklyScheduleCanvas(weekNumber) {
+    const week = Number(weekNumber || state.selectedWeek || 1);
+    const sem = getCurrentSemesterData();
+    const currentWeekInfo = sem?.weeks.find(w => Number(w.week) === week);
+    const weekDateRange = currentWeekInfo ? `${currentWeekInfo.start} 至 ${currentWeekInfo.end}` : '';
+    const studentName = state.schedule?.studentName || '同学';
+    const semesterName = state.schedule?.semester || sem?.semester || '2026/09';
+
+    // 1. Filter active courses for this week and dayOfWeek 1..5
+    const activeCourses = (state.schedule?.courses || [])
+      .filter(c => c.weeks && c.weeks.includes(week))
+      .map(c => getEffectiveCourseForWeek(c, week))
+      .filter(c => c.dayOfWeek >= 1 && c.dayOfWeek <= 5 && c.startSlot);
+
+    // 2. Holidays for Mon-Fri
+    const weekHolidays = {};
+    for (let d = 1; d <= 5; d++) {
+      const dStr = getDayDateString(currentWeekInfo, d);
+      weekHolidays[d] = {
+        dateStr: dStr,
+        holiday: getHolidayForDate(dStr)
+      };
+    }
+
+    // 3. Determine max slot needed (min 10 slots 08:00 - 18:00, max 13 slots 21:00)
+    let maxSlot = 10;
+    activeCourses.forEach(c => {
+      const endSlot = c.startSlot + (c.slotSpan || 1) - 1;
+      if (endSlot > maxSlot) maxSlot = endSlot;
+    });
+    maxSlot = Math.min(13, Math.max(10, maxSlot));
+    const totalSlots = maxSlot;
+
+    // 4. Setup Canvas: Standard A4 Landscape Proportions (2400 x 1700)
+    const canvas = document.createElement('canvas');
+    const width = 2400;
+    const height = 1700;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Solid clean background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Header Band
+    const headerGrad = ctx.createLinearGradient(0, 0, width, 0);
+    headerGrad.addColorStop(0, '#1e3a8a');
+    headerGrad.addColorStop(1, '#2563eb');
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(0, 0, width, 160);
+
+    // Top University / Hub Tag
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.font = '600 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('🏛️ XMUM SCHEDULE HUB • 厦门大学马来西亚分校课表通', 60, 48);
+
+    // Main Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText(`第 ${week} 周 课程表`, 60, 116);
+
+    // Subtitle / Date / Student Info
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    const subtitleText = `📅 ${weekDateRange || '本学期'}   |   🎓 学期: ${semesterName}   |   👤 学生: ${studentName}`;
+    ctx.fillText(subtitleText, 430, 114);
+
+    // Right Tag on Header
+    const rightTag = '✨ 极简纯享版 • 仅含时间与课程名';
+    ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    const rightTagWidth = ctx.measureText(rightTag).width;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    drawRoundRect(ctx, width - 60 - rightTagWidth - 36, 44, rightTagWidth + 36, 48, 24);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(rightTag, width - 60 - rightTagWidth - 18, 76);
+
+    // 5. Timetable Matrix Area
+    const gridX = 60;
+    const gridY = 195;
+    const gridW = width - 120; // 2280
+    const gridH = height - gridY - 55; // 1450
+    const timeColW = 180;
+    const dayColW = (gridW - timeColW) / 5; // 420
+    const headerRowH = 75;
+    const slotRowH = (gridH - headerRowH) / totalSlots;
+
+    // Header background
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(gridX, gridY, gridW, headerRowH);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gridX, gridY, gridW, headerRowH);
+
+    // Corner Header: 时间
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('时间', gridX + timeColW / 2, gridY + headerRowH / 2);
+
+    // Day Headers (Mon - Fri)
+    const dayNamesZh = ['周一', '周二', '周三', '周四', '周五'];
+    const dayNamesEn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    for (let d = 1; d <= 5; d++) {
+      const colX = gridX + timeColW + (d - 1) * dayColW;
+      const hol = weekHolidays[d];
+
+      let label = `${dayNamesZh[d - 1]} (${dayNamesEn[d - 1].slice(0, 3)})`;
+      if (hol.dateStr) {
+        const shortD = `${parseInt(hol.dateStr.slice(5, 7), 10)}.${parseInt(hol.dateStr.slice(8, 10), 10)}`;
+        label = `${dayNamesZh[d - 1]} • ${shortD}`;
+      }
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(label, colX + dayColW / 2, gridY + (hol.holiday ? 26 : headerRowH / 2));
+
+      if (hol.holiday) {
+        ctx.fillStyle = '#d97706';
+        ctx.font = 'bold 19px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+        ctx.fillText(`🎉 假日: ${hol.holiday.name}`, colX + dayColW / 2, gridY + 53);
+      }
+
+      // Column vertical border
+      ctx.beginPath();
+      ctx.moveTo(colX, gridY);
+      ctx.lineTo(colX, gridY + gridH);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Draw Time Slots & Row Lines
+    for (let s = 1; s <= totalSlots; s++) {
+      const rowY = gridY + headerRowH + (s - 1) * slotRowH;
+      const slotDef = TIME_SLOTS_DEF[s - 1] || { start: `${s + 7}:00`, end: `${s + 8}:00` };
+
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(gridX, rowY);
+      ctx.lineTo(gridX + gridW, rowY);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Zebra stripes in time column
+      if (s % 2 === 0) {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(gridX, rowY, timeColW, slotRowH);
+      }
+
+      // Time labels
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(slotDef.start, gridX + timeColW / 2, rowY + slotRowH / 2 - 13);
+      
+      ctx.fillStyle = '#64748b';
+      ctx.font = '500 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(slotDef.end, gridX + timeColW / 2, rowY + slotRowH / 2 + 13);
+    }
+
+    // Outer grid border
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gridX, gridY, gridW, gridH);
+
+    // 6. Draw Course Blocks (ONLY Time & Course Name, strictly NO classroom)
+    activeCourses.forEach(course => {
+      const d = course.dayOfWeek;
+      const s = course.startSlot;
+      const span = course.slotSpan || 1;
+      if (d < 1 || d > 5 || s > totalSlots) return;
+
+      const actualSpan = Math.min(span, totalSlots - s + 1);
+      const cardX = gridX + timeColW + (d - 1) * dayColW + 8;
+      const cardY = gridY + headerRowH + (s - 1) * slotRowH + 6;
+      const cardW = dayColW - 16;
+      const cardH = actualSpan * slotRowH - 12;
+
+      // Base card fill with drop shadow
+      const bgCol = course.colorTag || '#2563eb';
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.14)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = bgCol;
+      drawRoundRect(ctx, cardX, cardY, cardW, cardH, 12);
+      ctx.fill();
+      ctx.restore();
+
+      // Card gradient sheen
+      const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
+      cardGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+      cardGrad.addColorStop(1, 'rgba(0, 0, 0, 0.16)');
+      ctx.fillStyle = cardGrad;
+      drawRoundRect(ctx, cardX, cardY, cardW, cardH, 12);
+      ctx.fill();
+
+      // Border outline
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 1.5;
+      drawRoundRect(ctx, cardX, cardY, cardW, cardH, 12);
+      ctx.stroke();
+
+      // Time range string
+      const slotDefStart = TIME_SLOTS_DEF[s - 1] || { start: `${s + 7}:00` };
+      const slotDefEnd = TIME_SLOTS_DEF[s + span - 2] || TIME_SLOTS_DEF[Math.min(s + span - 2, TIME_SLOTS_DEF.length - 1)] || slotDefStart;
+      const timeRangeStr = course.time || `${slotDefStart.start} - ${slotDefEnd.end}`;
+
+      // Draw Time Badge
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(`⏰ ${timeRangeStr}`, cardX + 18, cardY + 16);
+
+      // Draw Course Name (ONLY Course Name)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+      drawWrappedText(ctx, course.name, cardX + 18, cardY + 54, cardW - 36, 34, cardH - 64);
+    });
+
+    // 7. Footer line
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('💡 XMUM Schedule Hub • 厦门大学马来西亚分校课表通 (一图单页全览 • 仅含时间与课程名)', 60, height - 20);
+
+    ctx.textAlign = 'right';
+    const now = new Date();
+    const nowStr = `${now.toLocaleDateString('zh-CN')} ${now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+    ctx.fillText(`当前所选: 第 ${week} 周  |  导出时间: ${nowStr}`, width - 60, height - 20);
+
+    return canvas;
+  }
+
+  function downloadSchedulePdf(weekNumber) {
+    try {
+      showToast('正在生成单页 PDF 课表...');
+      const canvas = generateWeeklyScheduleCanvas(weekNumber);
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      
+      const jspdfModule = window.jspdf;
+      if (jspdfModule && jspdfModule.jsPDF) {
+        const { jsPDF } = jspdfModule;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+        // 297mm x 210mm A4 landscape, exactly 1 page
+        pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+        pdf.save(`XMUM_第${weekNumber}周课表.pdf`);
+        showToast('🎉 PDF 课表已导出！');
+      } else {
+        const printWin = window.open('', '_blank');
+        if (printWin) {
+          printWin.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>XMUM 第${weekNumber}周课表</title>
+                <style>
+                  @page { size: A4 landscape; margin: 0; }
+                  body { margin: 0; display: flex; justify-content: center; align-items: center; background: #fff; }
+                  img { width: 100vw; height: auto; max-height: 100vh; object-fit: contain; }
+                </style>
+              </head>
+              <body>
+                <img src="${imgData}" onload="window.print();" />
+              </body>
+            </html>
+          `);
+          printWin.document.close();
+        }
+      }
+    } catch (err) {
+      console.error('PDF export error:', err);
+      showToast('❌ PDF 导出失败，请重试');
+    }
+  }
+
+  function downloadSchedulePng(weekNumber) {
+    try {
+      showToast('正在生成高清长图...');
+      const canvas = generateWeeklyScheduleCanvas(weekNumber);
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `XMUM_第${weekNumber}周课表.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('🎉 课表图片已保存！');
+    } catch (err) {
+      console.error('Image export error:', err);
+      showToast('❌ 保存失败，请长按预览图直接存储');
+    }
+  }
+
+  function openExportScheduleModal(weekNumber) {
+    const week = Number(weekNumber || state.selectedWeek || 1);
+    if (el.exportScheduleModalTitle) {
+      el.exportScheduleModalTitle.textContent = `导出第 ${week} 周极简课表`;
+    }
+    
+    if (el.exportPreviewLoading) el.exportPreviewLoading.classList.remove('hidden');
+    if (el.exportPreviewImg) {
+      el.exportPreviewImg.classList.add('hidden');
+      el.exportPreviewImg.src = '';
+    }
+
+    openModal(el.exportScheduleModal);
+
+    setTimeout(() => {
+      try {
+        const canvas = generateWeeklyScheduleCanvas(week);
+        const dataUrl = canvas.toDataURL('image/png');
+        if (el.exportPreviewImg) {
+          el.exportPreviewImg.src = dataUrl;
+          el.exportPreviewImg.classList.remove('hidden');
+        }
+        if (el.exportPreviewLoading) {
+          el.exportPreviewLoading.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error('Failed to render export preview:', err);
+        if (el.exportPreviewLoading) {
+          el.exportPreviewLoading.innerHTML = '<span style="color:#ef4444;">⚠️ 生成预览失败，请重试</span>';
+        }
+      }
+    }, 60);
+  }
+
   // 7. Daily Agenda Feed
   function renderDailyAgenda() {
     const sem = getCurrentSemesterData();
@@ -2631,6 +3025,16 @@
     // Update Notice Tabs (Current Version vs History)
     on(el.noticeTabCurrentBtn, 'click', () => switchNoticeTab('current'));
     on(el.noticeTabHistoryBtn, 'click', () => switchNoticeTab('history'));
+
+    // Export Schedule Modal Handlers
+    on(el.exportScheduleBtn, 'click', () => openExportScheduleModal(state.selectedWeek));
+    on(el.profileExportScheduleBtn, 'click', () => openExportScheduleModal(state.selectedWeek));
+    on(el.closeExportScheduleBtn, 'click', () => closeModal(el.exportScheduleModal));
+    on(el.exportScheduleModal, 'click', (e) => {
+      if (e.target === el.exportScheduleModal) closeModal(el.exportScheduleModal);
+    });
+    on(el.btnDownloadPdf, 'click', () => downloadSchedulePdf(state.selectedWeek));
+    on(el.btnDownloadPng, 'click', () => downloadSchedulePng(state.selectedWeek));
 
     // Theme toggle (both old button & profile)
     on(el.themeToggleBtn, 'click', () => {

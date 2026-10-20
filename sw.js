@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xmum-schedule-v29';
+const CACHE_NAME = 'xmum-schedule-v30';
 const ASSETS_TO_CACHE = [
   '/',
   './',
@@ -12,7 +12,8 @@ const ASSETS_TO_CACHE = [
   'icon.svg',
   'favicon.ico',
   'data/academic_calendar.js',
-  'data/sample_schedule.js'
+  'data/sample_schedule.js',
+  'data/jspdf.umd.min.js'
 ];
 
 self.addEventListener('install', (event) => {

@@ -3846,3 +3846,198 @@ body.theme-light .profile-version-pill {
   border: 1px solid rgba(37, 99, 235, 0.22);
 }
 
+/* ========================================================
+   Export Schedule (PDF & Image) Styles
+   ======================================================== */
+.btn-pill-export {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.btn-pill-export:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+body.theme-light .btn-pill-export {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  color: #2563eb;
+}
+
+body.theme-light .btn-pill-export:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.export-schedule-card {
+  max-width: 620px;
+  width: 95%;
+}
+
+.export-badge {
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+body.theme-light .export-badge {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.export-notice-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.export-preview-container {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  max-height: 48vh;
+  overflow: auto;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.theme-light .export-preview-container {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.export-preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 40px 0;
+}
+
+.export-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: exportSpin 0.8s linear infinite;
+}
+
+@keyframes exportSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.export-preview-img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  display: block;
+}
+
+.export-mobile-tip {
+  font-size: 0.73rem;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px dashed rgba(245, 158, 11, 0.35);
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+body.theme-light .export-mobile-tip {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.export-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .export-actions-row {
+    flex-direction: column;
+  }
+}
+
+.export-btn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.export-btn-pdf {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.export-btn-pdf:hover,
+.export-btn-pdf:active {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-1px);
+}
+
+.export-btn-png {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+.export-btn-png:hover,
+.export-btn-png:active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+body.theme-light .export-btn-png {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .export-btn-png:hover,
+body.theme-light .export-btn-png:active {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+

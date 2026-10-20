@@ -19,7 +19,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=29">
+  <link rel="stylesheet" href="app.css?v=30">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -108,6 +108,9 @@
             <span class="date-range-sub" id="gridDateRange">10月4日 - 10月10日</span>
           </div>
           <div class="grid-actions">
+            <button class="btn-pill btn-pill-export" id="exportScheduleBtn" title="导出当前周课表为 PDF 或图片">
+              <span>📤 导出课表</span>
+            </button>
             <button class="btn-pill" id="todayJumpBtn">回到今天</button>
           </div>
         </div>
@@ -237,6 +240,19 @@
                 </div>
                 <div class="menu-item-right">
                   <span class="profile-badge-count hidden" id="profileRecycleCountBadge">0</span>
+                  <span class="menu-arrow">›</span>
+                </div>
+              </button>
+
+              <button class="profile-menu-item" id="profileExportScheduleBtn">
+                <div class="menu-item-left">
+                  <span class="menu-item-icon">📤</span>
+                  <div class="menu-item-text">
+                    <span class="menu-item-name">导出当前周课表 (PDF / 图片)</span>
+                    <span class="menu-item-desc">单页全览 • 纯享版 (仅含时间与课程名)</span>
+                  </div>
+                </div>
+                <div class="menu-item-right">
                   <span class="menu-arrow">›</span>
                 </div>
               </button>
@@ -733,6 +749,49 @@
       </div>
     </div>
 
+    <!-- Modal: Export Schedule (导出当前周极简课表为 PDF 或图片) -->
+    <div class="modal-backdrop" id="exportScheduleModal">
+      <div class="modal-card export-schedule-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge export-badge">📤 课表导出</span>
+            <h3 class="modal-title" id="exportScheduleModalTitle">导出当前周极简课表</h3>
+          </div>
+          <button class="btn-close" id="closeExportScheduleBtn">×</button>
+        </div>
+        <div class="modal-body export-modal-body">
+          <p class="export-notice-desc">
+            <strong>单页全览纯享版</strong>：仅保留时间段与课程名称（不含教室），一张图完整收录周一至周五全天排课，无任何分页！
+          </p>
+          
+          <!-- Image Preview Area -->
+          <div class="export-preview-container">
+            <div class="export-preview-loading" id="exportPreviewLoading">
+              <span class="export-spinner"></span>
+              <span class="export-loading-text">正在生成高清单页课表...</span>
+            </div>
+            <img id="exportPreviewImg" class="export-preview-img hidden" alt="XMUM 周课表单页全览" />
+          </div>
+
+          <div class="export-mobile-tip">
+            💡 手机提示：长按上方预览图，也可直接选择“存储图像”保存至手机相册
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="export-actions-row">
+            <button class="btn-primary export-btn export-btn-pdf" id="btnDownloadPdf">
+              <span class="btn-icon">📄</span>
+              <span class="btn-text">导出为 PDF 文档</span>
+            </button>
+            <button class="btn-secondary export-btn export-btn-png" id="btnDownloadPng">
+              <span class="btn-icon">🖼️</span>
+              <span class="btn-text">保存高清图片 (PNG)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast-message" id="toastMessage"></div>
 
@@ -750,9 +809,10 @@
     <span id="headerLoginBtnText" style="display:none;" aria-hidden="true"></span>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=29"></script>
-  <script src="data/sample_schedule.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="data/academic_calendar.js?v=30"></script>
+  <script src="data/sample_schedule.js?v=30"></script>
+  <script src="data/jspdf.umd.min.js"></script>
+  <script src="app.js?v=30"></script>
 
   <!-- Non-blocking Analytics -->
   <script>
