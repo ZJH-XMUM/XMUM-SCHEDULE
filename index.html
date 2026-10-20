@@ -19,7 +19,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="stylesheet" href="app.css?v=32">
+  <link rel="stylesheet" href="app.css?v=33">
 </head>
 <body class="theme-dark">
   <!-- Status bar mask for iOS standalone PWA & notch devices -->
@@ -773,20 +773,38 @@
             <img id="exportPreviewImg" class="export-preview-img hidden" alt="XMUM 周课表单页全览" />
           </div>
 
-          <div class="export-mobile-tip">
+          <div class="export-mobile-tip" id="exportMobileTip">
             💡 手机提示：长按上方预览图，也可直接选择“存储图像”保存至手机相册
           </div>
 
-          <!-- Action Buttons -->
-          <div class="export-actions-row">
-            <button class="btn-primary export-btn export-btn-pdf" id="btnDownloadPdf">
-              <span class="btn-icon">📄</span>
-              <span class="btn-text">导出为 PDF 文档</span>
-            </button>
-            <button class="btn-secondary export-btn export-btn-png" id="btnDownloadPng">
-              <span class="btn-icon">🖼️</span>
-              <span class="btn-text">保存高清图片 (PNG)</span>
-            </button>
+          <!-- Format Selection Tabs -->
+          <div class="export-format-section">
+            <span class="export-format-title">第一步：选择导出格式</span>
+            <div class="export-format-tabs" id="exportFormatTabs">
+              <button type="button" class="export-format-tab active" data-format="png" id="exportTabPng">
+                <span class="format-tab-icon">🖼️</span>
+                <span class="format-tab-text">高清图片 (PNG)</span>
+              </button>
+              <button type="button" class="export-format-tab" data-format="pdf" id="exportTabPdf">
+                <span class="format-tab-icon">📄</span>
+                <span class="format-tab-text">PDF 打印文档</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons (Download vs Share) -->
+          <div class="export-action-section">
+            <span class="export-format-title">第二步：选择保存或分享</span>
+            <div class="export-actions-row">
+              <button type="button" class="btn-primary export-btn" id="btnActionDownload">
+                <span class="btn-icon">📥</span>
+                <span class="btn-text" id="btnDownloadText">直接下载到手机</span>
+              </button>
+              <button type="button" class="btn-secondary export-btn" id="btnActionShare">
+                <span class="btn-icon">🔗</span>
+                <span class="btn-text" id="btnShareText">系统/好友分享</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -796,6 +814,8 @@
     <div class="toast-message" id="toastMessage"></div>
 
     <!-- Hidden compatibility elements to protect against any stale cached JS -->
+    <button id="btnDownloadPdf" style="display:none;" aria-hidden="true"></button>
+    <button id="btnDownloadPng" style="display:none;" aria-hidden="true"></button>
     <button id="addCustomCourseBtn" style="display:none;" aria-hidden="true"></button>
     <button id="exportIcsBtn" style="display:none;" aria-hidden="true"></button>
     <button id="loadDemoBtn" style="display:none;" aria-hidden="true"></button>
@@ -809,10 +829,10 @@
     <span id="headerLoginBtnText" style="display:none;" aria-hidden="true"></span>
 
   <!-- Core App Scripts -->
-  <script src="data/academic_calendar.js?v=32"></script>
-  <script src="data/sample_schedule.js?v=32"></script>
+  <script src="data/academic_calendar.js?v=33"></script>
+  <script src="data/sample_schedule.js?v=33"></script>
   <script src="data/jspdf.umd.min.js"></script>
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=33"></script>
 
   <!-- Non-blocking Analytics -->
   <script>

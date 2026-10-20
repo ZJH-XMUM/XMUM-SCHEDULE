@@ -3989,6 +3989,67 @@ body.theme-light .export-mobile-tip {
   border-color: rgba(245, 158, 11, 0.3);
 }
 
+.export-format-section,
+.export-action-section {
+  margin-bottom: 12px;
+}
+
+.export-format-title {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.export-format-tabs {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+body.theme-light .export-format-tabs {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.export-format-tab {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.export-format-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+}
+
+body.theme-light .export-format-tab {
+  color: #475569;
+}
+
+body.theme-light .export-format-tab.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+
 .export-actions-row {
   display: flex;
   gap: 10px;
@@ -4013,6 +4074,7 @@ body.theme-light .export-mobile-tip {
   cursor: pointer;
   transition: all var(--transition-fast);
 }
+
 
 .export-btn-pdf {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
