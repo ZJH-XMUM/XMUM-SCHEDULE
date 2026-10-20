@@ -1775,21 +1775,11 @@
     ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText(`第 ${week} 周 课程表`, 60, 116);
 
-    // Subtitle / Date / Student Info
+    // Subtitle / Date / Semester Info (Student info removed for privacy)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
-    const subtitleText = `📅 ${weekDateRange || '本学期'}   |   🎓 学期: ${semesterName}   |   👤 学生: ${studentName}`;
-    ctx.fillText(subtitleText, 430, 114);
-
-    // Right Tag on Header
-    const rightTag = '✨ 极简纯享版 • 仅含时间与课程名';
-    ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
-    const rightTagWidth = ctx.measureText(rightTag).width;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-    drawRoundRect(ctx, width - 60 - rightTagWidth - 36, 44, rightTagWidth + 36, 48, 24);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(rightTag, width - 60 - rightTagWidth - 18, 76);
+    const subtitleText = `📅 教学周: ${weekDateRange || '本学期'}   |   🎓 当前学期: ${semesterName}`;
+    ctx.fillText(subtitleText, 450, 116);
 
     // 5. Timetable Matrix Area
     const gridX = 60;
@@ -1940,12 +1930,12 @@
       drawWrappedText(ctx, course.name, cardX + 18, cardY + 54, cardW - 36, 34, cardH - 64);
     });
 
-    // 7. Footer line
+    // 7. Footer line (Clean watermark without parentheses)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('💡 XMUM Schedule Hub • 厦门大学马来西亚分校课表通 (一图单页全览 • 仅含时间与课程名)', 60, height - 20);
+    ctx.fillText('💡 XMUM Schedule Hub • 厦门大学马来西亚分校课表通', 60, height - 20);
 
     ctx.textAlign = 'right';
     const now = new Date();
@@ -1957,7 +1947,7 @@
 
   function downloadSchedulePdf(weekNumber) {
     try {
-      showToast('正在生成单页 PDF 课表...');
+      showToast('⏳ 正在生成单页 PDF 课表...');
       const canvas = generateWeeklyScheduleCanvas(weekNumber);
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       
@@ -1972,7 +1962,21 @@
         // 297mm x 210mm A4 landscape, exactly 1 page
         pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
         pdf.save(`XMUM_第${weekNumber}周课表.pdf`);
-        showToast('🎉 PDF 课表已导出！');
+
+        // Tactile button confirmation feedback
+        if (el.btnDownloadPdf) {
+          const origHtml = el.btnDownloadPdf.innerHTML;
+          el.btnDownloadPdf.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">PDF 导出成功！</span>';
+          el.btnDownloadPdf.classList.add('export-btn-success');
+          setTimeout(() => {
+            if (el.btnDownloadPdf) {
+              el.btnDownloadPdf.innerHTML = origHtml;
+              el.btnDownloadPdf.classList.remove('export-btn-success');
+            }
+          }, 2500);
+        }
+
+        showToast('🎉 PDF 课表导出成功！已开始下载');
       } else {
         const printWin = window.open('', '_blank');
         if (printWin) {
@@ -1994,6 +1998,7 @@
           `);
           printWin.document.close();
         }
+        showToast('🎉 已打开打印/保存窗口');
       }
     } catch (err) {
       console.error('PDF export error:', err);
@@ -2003,7 +2008,7 @@
 
   function downloadSchedulePng(weekNumber) {
     try {
-      showToast('正在生成高清长图...');
+      showToast('⏳ 正在生成高清课表图片...');
       const canvas = generateWeeklyScheduleCanvas(weekNumber);
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -2012,7 +2017,21 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast('🎉 课表图片已保存！');
+
+      // Tactile button confirmation feedback
+      if (el.btnDownloadPng) {
+        const origHtml = el.btnDownloadPng.innerHTML;
+        el.btnDownloadPng.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">图片保存成功！</span>';
+        el.btnDownloadPng.classList.add('export-btn-success');
+        setTimeout(() => {
+          if (el.btnDownloadPng) {
+            el.btnDownloadPng.innerHTML = origHtml;
+            el.btnDownloadPng.classList.remove('export-btn-success');
+          }
+        }, 2500);
+      }
+
+      showToast('🎉 高清课表图片已保存！');
     } catch (err) {
       console.error('Image export error:', err);
       showToast('❌ 保存失败，请长按预览图直接存储');
